@@ -50,8 +50,8 @@ const App = () => {
           <h1 className="text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
             Andres Avelar
           </h1>
-          <h2 className="text-2xl text-gray-200 mb-4">Statistics & Data Science | Economics</h2>
-          <p className="text-xl text-gray-200">UCSB '26</p>
+          <h2 className="text-2xl text-gray-300 mb-4">Statistics & Data Science | Economics</h2>
+          <p className="text-xl text-gray-300">UCSB '26</p>
         </motion.div>
       </motion.div>
 
@@ -72,24 +72,33 @@ const App = () => {
               <p className="text-gray-300">• Leading 200+ weekly blockchain lectures</p>
               <p className="text-gray-300">• Organized summit with $10,000+ in sponsorships</p>
             </div>
-            <motion.div 
-              className="flex-shrink-0 cursor-pointer"
-              whileHover={{ scale: 1.1 }}
-              animate={{ 
-                y: [-5, 5, -5],
-                rotate: [-2, 2, -2]
-              }}
-              transition={{ 
-                y: { duration: 2, repeat: Infinity },
-                rotate: { duration: 3, repeat: Infinity }
-              }}
-            >
-              <img 
-                src="blockchainucsblogo.png" 
-                alt="Blockchain@UCSB" 
-                className="w-24 h-24 rounded-full shadow-lg"
-              />
-            </motion.div>
+            <div className="flex-shrink-0 flex flex-col items-center gap-2">
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-blue-400 text-sm font-medium"
+              >
+                Click me!
+              </motion.span>
+              <motion.div 
+                className="cursor-pointer"
+                whileHover={{ scale: 1.1 }}
+                animate={{ 
+                  y: [-5, 5, -5],
+                  rotate: [-2, 2, -2]
+                }}
+                transition={{ 
+                  y: { duration: 2, repeat: Infinity },
+                  rotate: { duration: 3, repeat: Infinity }
+                }}
+              >
+                <img 
+                  src="blockchainucsblogo.png" 
+                  alt="Blockchain@UCSB" 
+                  className="w-24 h-24 rounded-full shadow-lg"
+                />
+              </motion.div>
+            </div>
           </motion.div>
 
           {/* ML Experience */}
@@ -106,24 +115,36 @@ const App = () => {
               <p className="text-gray-300">• Automated research workflows reducing processing time by 20%</p>
               <p className="text-gray-300">• Fine-tuned YOLOv8 CNN achieving 94% accuracy</p>
             </div>
-            <motion.div 
-              className="flex-shrink-0 cursor-pointer"
-              whileHover={{ scale: 1.1 }}
-              animate={{ 
-                y: [5, -5, 5],
-                rotate: [2, -2, 2]
-              }}
-              transition={{ 
-                y: { duration: 2, repeat: Infinity, delay: 0.5 },
-                rotate: { duration: 3, repeat: Infinity, delay: 0.5 }
-              }}
-            >
-              <img 
-                src="2430_updated_logo.png" 
-                alt="2430 Group" 
-                className="w-24 h-24 rounded-full shadow-lg"
-              />
-            </motion.div>
+            <div className="flex-shrink-0 flex flex-col items-center gap-2">
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-blue-400 text-sm font-medium"
+              >
+                Click me!
+              </motion.span>
+              <motion.a 
+                href="https://www.2430group.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer"
+                whileHover={{ scale: 1.1 }}
+                animate={{ 
+                  y: [5, -5, 5],
+                  rotate: [2, -2, 2]
+                }}
+                transition={{ 
+                  y: { duration: 2, repeat: Infinity, delay: 0.5 },
+                  rotate: { duration: 3, repeat: Infinity, delay: 0.5 }
+                }}
+              >
+                <img 
+                  src="2430_updated_logo.png" 
+                  alt="2430 Group" 
+                  className="w-24 h-24 rounded-full shadow-lg"
+                />
+              </motion.a>
+            </div>
           </motion.div>
 
           {/* Additional Experience */}
@@ -207,6 +228,70 @@ const App = () => {
               </div>
             </motion.div>
           </div>
+        </div>
+      </motion.div>
+
+      {/* Hobbies Section */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        className="px-4 py-8"
+      >
+        <div className="max-w-3xl mx-auto">
+          <motion.h3 
+            initial={{ x: -20 }}
+            whileInView={{ x: 0 }}
+            className="text-2xl font-bold mb-6"
+          >
+            Hobbies
+          </motion.h3>
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            initial={{ y: 50 }}
+            whileInView={{ y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
+            >
+              <h4 className="text-xl font-bold mb-2">Running & Cycling</h4>
+              <p className="text-gray-300 mb-2">Passionate about endurance sports and maintaining an active lifestyle through running and cycling adventures</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
+            >
+              <h4 className="text-xl font-bold mb-2">Rock Climbing</h4>
+              <p className="text-gray-300 mb-2">Explorer of vertical challenges, enjoying both indoor and outdoor climbing experiences</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
+            >
+              <h4 className="text-xl font-bold mb-2">Solo Traveling</h4>
+              <p className="text-gray-300 mb-2">Adventurous spirit exploring diverse cultures across Thailand, Japan, Italy, and Paris, embracing solo travel experiences</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
+            >
+              <h4 className="text-xl font-bold mb-2">Hiking</h4>
+              <p className="text-gray-300 mb-2">Discovering nature's beauty through trail exploration and outdoor adventures</p>
+            </motion.div>
+          </motion.div>
         </div>
       </motion.div>
     </div>
