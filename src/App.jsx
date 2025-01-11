@@ -175,15 +175,15 @@ const App = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
               <h4 className="font-bold mb-2">Frameworks</h4>
-              <p className="text-gray-300">Git, Visual Studio, RStudio, PyCharm, FastAPI, Excel</p>
+              <p className="text-gray-300">Git, FastAPI, Postman, Microsoft Suite, VertexAI, Google Colab, TensorFlow, SciKit-learn, React.js</p>
             </div>
             <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
               <h4 className="font-bold mb-2">Finance</h4>
-              <p className="text-gray-300">Futures/Options trading, TradingView, Artemis Analytics</p>
+              <p className="text-gray-300">Futures/Options trading, Polygon, TradingView, Interactive Brokers, Artemis Analytics</p>
             </div>
             <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
               <h4 className="font-bold mb-2">Languages</h4>
-              <p className="text-gray-300">Native Spanish, Python, SQL, R, C#, Java, Solidity</p>
+              <p className="text-gray-300">Native Spanish, Python, R, SQL, C#, Java, Javascript, Solidity, SAS, Stata</p>
             </div>
           </div>
         </div>
@@ -258,8 +258,8 @@ const App = () => {
               transition={{ duration: 0.5 }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
             >
-              <h4 className="text-xl font-bold mb-2">Running & Cycling</h4>
-              <p className="text-gray-300 mb-2">Passionate about endurance sports and maintaining an active lifestyle through running and cycling adventures</p>
+              <h4 className="text-xl font-bold mb-2">Running & Cycling 🏃‍♂️ 🚴</h4>
+              <p className="text-gray-300 mb-2">Currently training for a 1/2 marathon in beautiful Santa Barbara, cross-training with cycling</p>
             </motion.div>
 
             <motion.div
@@ -268,8 +268,8 @@ const App = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
             >
-              <h4 className="text-xl font-bold mb-2">Rock Climbing</h4>
-              <p className="text-gray-300 mb-2">Explorer of vertical challenges, enjoying both indoor and outdoor climbing experiences</p>
+              <h4 className="text-xl font-bold mb-2">Rock Climbing 🧗</h4>
+              <p className="text-gray-300 mb-2">Maxed out at 5.11b, working to reach 5.12 by end of 2025</p>
             </motion.div>
 
             <motion.div
@@ -278,8 +278,9 @@ const App = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
             >
-              <h4 className="text-xl font-bold mb-2">Solo Traveling</h4>
-              <p className="text-gray-300 mb-2">Adventurous spirit exploring diverse cultures across Thailand, Japan, Italy, and Paris, embracing solo travel experiences</p>
+              <h4 className="text-xl font-bold mb-2">Solo Travel 🌎 🛫</h4>
+              <p className="text-gray-300 mb-2">
+                🇩🇪🇫🇷🇨🇭🇦🇹🇮🇹🇹🇭🇯🇵</p>
             </motion.div>
 
             <motion.div
@@ -289,7 +290,7 @@ const App = () => {
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
             >
               <h4 className="text-xl font-bold mb-2">Hiking</h4>
-              <p className="text-gray-300 mb-2">Discovering nature's beauty through trail exploration and outdoor adventures</p>
+              <p className="text-gray-300 mb-2">Love to explore hiking trails in Montecito & Santa Barbara mountains</p>
             </motion.div>
           </motion.div>
         </div>
