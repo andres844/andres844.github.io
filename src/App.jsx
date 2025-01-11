@@ -21,7 +21,7 @@ const App = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: isVisible ? 1 : 0, y: 0 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 1.2 }}
         className="h-[70vh] flex flex-col justify-center items-center px-4 relative"
       >
         <motion.div
@@ -62,7 +62,7 @@ const App = () => {
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-12 flex items-center gap-6"
           >
             <div className="flex-grow bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
@@ -105,11 +105,11 @@ const App = () => {
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-12 flex items-center gap-6"
           >
             <div className="flex-grow bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
-              <h4 className="text-xl font-bold mb-2">Machine Learning Intern - 2430 Group</h4>
+              <h4 className="text-xl font-bold mb-2">Machine Learning Engineer - 2430 Group</h4>
               <p className="text-gray-300">• Integrated FuseChat-7b AI model processing 9M+ JSON entries</p>
               <p className="text-gray-300">• Led RAG pipeline development with Random Forest & XGBoost</p>
               <p className="text-gray-300">• Automated research workflows reducing processing time by 20%</p>
@@ -119,6 +119,7 @@ const App = () => {
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                transition={{ delay: 1.2 }}
                 className="text-blue-400 text-sm font-medium"
               >
                 Click me!
@@ -151,7 +152,7 @@ const App = () => {
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
             className="mb-12"
           >
             <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
@@ -168,23 +169,43 @@ const App = () => {
       <motion.div 
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+        viewport={{ once: true, margin: "-100px" }}
         className="px-4 py-8 bg-gradient-to-t from-purple-900 to-transparent"
       >
         <div className="max-w-3xl mx-auto">
           <h3 className="text-2xl font-bold mb-6">Skills</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
+            >
               <h4 className="font-bold mb-2">Frameworks</h4>
               <p className="text-gray-300">Git, FastAPI, Postman, Microsoft Suite, VertexAI, Google Colab, TensorFlow, SciKit-learn, React.js</p>
-            </div>
-            <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
+            >
               <h4 className="font-bold mb-2">Finance</h4>
               <p className="text-gray-300">Futures/Options trading, Polygon, TradingView, Interactive Brokers, Artemis Analytics</p>
-            </div>
-            <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              viewport={{ once: true }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
+            >
               <h4 className="font-bold mb-2">Languages</h4>
               <p className="text-gray-300">Native Spanish, Python, R, SQL, C#, Java, Javascript, Solidity, SAS, Stata</p>
-            </div>
+            </motion.div>
           </div>
         </div>
       </motion.div>
@@ -193,6 +214,8 @@ const App = () => {
       <motion.div 
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+        viewport={{ once: true, margin: "-100px" }}
         className="px-4 py-8 bg-gradient-to-b from-purple-900 to-transparent"
       >
         <div className="max-w-3xl mx-auto">
@@ -201,8 +224,9 @@ const App = () => {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
             >
               <h4 className="text-xl font-bold mb-2">AI Research Assistant</h4>
               <p className="text-gray-300 mb-2">Built a RAG-powered research assistant using LangChain and OpenAI API</p>
@@ -216,8 +240,9 @@ const App = () => {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
+              transition={{ duration: 0.8, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
             >
               <h4 className="text-xl font-bold mb-2">Portfolio Analysis Tool</h4>
               <p className="text-gray-300 mb-2">Developed a tool for analyzing crypto portfolio performance and risk metrics</p>
@@ -235,7 +260,7 @@ const App = () => {
       <motion.div 
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 1 }}
         className="px-4 py-8"
       >
         <div className="max-w-3xl mx-auto">
@@ -250,12 +275,12 @@ const App = () => {
             className="grid grid-cols-1 md:grid-cols-2 gap-6"
             initial={{ y: 50 }}
             whileInView={{ y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.8 }}
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.8 }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
             >
               <h4 className="text-xl font-bold mb-2">Running & Cycling 🏃‍♂️ 🚴</h4>
@@ -265,10 +290,10 @@ const App = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
             >
-              <h4 className="text-xl font-bold mb-2">Rock Climbing 🧗</h4>
+              <h4 className="text-xl font-bold mb-2">Rock Climbing 🏔️ 🧗</h4>
               <p className="text-gray-300 mb-2">Maxed out at 5.11b, working to reach 5.12 by end of 2025</p>
             </motion.div>
 
@@ -289,7 +314,7 @@ const App = () => {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
             >
-              <h4 className="text-xl font-bold mb-2">Hiking</h4>
+              <h4 className="text-xl font-bold mb-2">Hiking 🥾 🏔️</h4>
               <p className="text-gray-300 mb-2">Love to explore hiking trails in Montecito & Santa Barbara mountains</p>
             </motion.div>
           </motion.div>
