@@ -80,7 +80,10 @@ const App = () => {
               >
                 Click me!
               </motion.span>
-              <motion.div 
+              <motion.a 
+                href = "https://www.instagram.com/blockchainatucsb/"
+                target = "_blank"
+                rel="noopener noreferrer"
                 className="cursor-pointer"
                 whileHover={{ scale: 1.1 }}
                 animate={{ 
@@ -97,7 +100,7 @@ const App = () => {
                   alt="Blockchain@UCSB" 
                   className="w-24 h-24 rounded-full shadow-lg"
                 />
-              </motion.div>
+              </motion.a>
             </div>
           </motion.div>
 
@@ -194,7 +197,7 @@ const App = () => {
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
             >
               <h4 className="font-bold mb-2">Finance</h4>
-              <p className="text-gray-300">Futures/Options trading, Polygon, TradingView, Interactive Brokers, Artemis Analytics</p>
+              <p className="text-gray-300">Futures/Options trading, Polygon.io, TradingView, Interactive Brokers, Artemis Analytics</p>
             </motion.div>
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
