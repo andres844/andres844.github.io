@@ -17,7 +17,7 @@ const ClickableLogo = ({ href, imageSrc, altText }) => {
       >
         Click me!
       </motion.span>
-      
+
       {/* Logo with floating animation and shadow */}
       <motion.a 
         href={href}
@@ -35,7 +35,7 @@ const ClickableLogo = ({ href, imageSrc, altText }) => {
         }}
       >
         {/* Shadow element */}
-        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 
+        <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 
                       w-4/5 h-4 bg-black opacity-200 blur-md rounded-full"></div>
         
         {/* Logo image */}
@@ -43,7 +43,7 @@ const ClickableLogo = ({ href, imageSrc, altText }) => {
           src={imageSrc}
           alt={altText}
           className="w-24 h-24 rounded-full shadow-lg 
-                   relative z-40 bg-gray-800"
+                   relative z-40 bg-white-100"
         />
       </motion.a>
     </div>
