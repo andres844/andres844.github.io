@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-
+import TiltCard from './components/TiltCard';
+import MagneticButton from './components/MagneticButton';
+import ScrollProgress from './components/ScrollProgress';
+import ClickableLogo from './components/ClickableLogo';
 const App = () => {
   const { scrollY } = useScroll();
   const [isVisible, setIsVisible] = useState(false);
@@ -16,7 +19,8 @@ const App = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
+<div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
+    <ScrollProgress />
       {/* Hero Section with Profile Picture */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -47,10 +51,10 @@ const App = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h1 className="text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+            <h1 className="text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-yellow-300">
             Andres Avelar
-          </h1>
-          <h2 className="text-2xl text-gray-300 mb-4">Statistics & Data Science | Economics</h2>
+            </h1>
+            <h2 className="text-2xl text-gray-300 mb-4">Statistics & Data Science | Economics</h2>
           <p className="text-xl text-gray-300">UCSB '26</p>
         </motion.div>
       </motion.div>
@@ -60,11 +64,13 @@ const App = () => {
         <div className="max-w-3xl mx-auto">
           {/* Blockchain Experience */}
           <motion.div
+            
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-12 flex items-center gap-6"
-          >
+          > 
+            <TiltCard>
             <div className="flex-grow bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
               <h4 className="text-xl font-bold mb-2">President - Blockchain@UCSB</h4>
               <p className="text-gray-300">• Course completion in Blockchain Fundamentals with LinkedIn certification</p>
@@ -72,36 +78,14 @@ const App = () => {
               <p className="text-gray-300">• Leading 200+ weekly blockchain lectures</p>
               <p className="text-gray-300">• Organized summit with $10,000+ in sponsorships</p>
             </div>
-            <div className="flex-shrink-0 flex flex-col items-center gap-2">
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-blue-400 text-sm font-medium"
-              >
-                Click me!
-              </motion.span>
-              <motion.a 
-                href = "https://www.instagram.com/blockchainatucsb/"
-                target = "_blank"
-                rel="noopener noreferrer"
-                className="cursor-pointer"
-                whileHover={{ scale: 1.1 }}
-                animate={{ 
-                  y: [-5, 5, -5],
-                  rotate: [-2, 2, -2]
-                }}
-                transition={{ 
-                  y: { duration: 2, repeat: Infinity },
-                  rotate: { duration: 3, repeat: Infinity }
-                }}
-              >
-                <img 
-                  src="blockchainucsblogo.png" 
-                  alt="Blockchain@UCSB" 
-                  className="w-24 h-24 rounded-full shadow-lg"
+            </TiltCard>
+
+            <ClickableLogo 
+                href="https://www.instagram.com/blockchainatucsb/"
+                imageSrc="blockchainucsblogo.png"
+                altText="Blockchain@UCSB"
                 />
-              </motion.a>
-            </div>
+
           </motion.div>
 
           {/* ML Experience */}
@@ -111,6 +95,7 @@ const App = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-12 flex items-center gap-6"
           >
+            <TiltCard>
             <div className="flex-grow bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
               <h4 className="text-xl font-bold mb-2">Machine Learning Engineer - 2430 Group</h4>
               <p className="text-gray-300">• Integrated FuseChat-7b AI model processing 9M+ JSON entries</p>
@@ -118,53 +103,33 @@ const App = () => {
               <p className="text-gray-300">• Automated research workflows reducing processing time by 20%</p>
               <p className="text-gray-300">• Fine-tuned YOLOv8 CNN achieving 94% accuracy</p>
             </div>
-            <div className="flex-shrink-0 flex flex-col items-center gap-2">
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.2 }}
-                className="text-blue-400 text-sm font-medium"
-              >
-                Click me!
-              </motion.span>
-              <motion.a 
+            </TiltCard>
+            <ClickableLogo 
                 href="https://www.2430group.org/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cursor-pointer"
-                whileHover={{ scale: 1.1 }}
-                animate={{ 
-                  y: [5, -5, 5],
-                  rotate: [2, -2, 2]
-                }}
-                transition={{ 
-                  y: { duration: 2, repeat: Infinity, delay: 0.5 },
-                  rotate: { duration: 3, repeat: Infinity, delay: 0.5 }
-                }}
-              >
-                <img 
-                  src="2430_updated_logo.png" 
-                  alt="2430 Group" 
-                  className="w-24 h-24 rounded-full shadow-lg"
-                />
-              </motion.a>
-            </div>
+                imageSrc="2430_updated_logo.png"
+                altText="2430 Group"
+            />
           </motion.div>
 
           {/* Additional Experience */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-12"
           >
+            <TiltCard>
+
             <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all">
               <h4 className="text-xl font-bold mb-2">Additional Experience</h4>
               <p className="text-gray-300">• Systems Operator at UCSB LSIT</p>
               <p className="text-gray-300">• Software Engineer Intern at APTCO LLC</p>
               <p className="text-gray-300">• Full-stack development with ASP.NET</p>
             </div>
+            </TiltCard>
+
           </motion.div>
+
         </div>
       </div>
 
@@ -192,7 +157,7 @@ const App = () => {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
               viewport={{ once: true }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
             >
@@ -202,7 +167,7 @@ const App = () => {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
               viewport={{ once: true }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
             >
@@ -243,7 +208,7 @@ const App = () => {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
               viewport={{ once: true }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
             >
@@ -314,7 +279,7 @@ const App = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
               className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
             >
               <h4 className="text-xl font-bold mb-2">Hiking 🥾 🏔️</h4>
@@ -322,8 +287,31 @@ const App = () => {
             </motion.div>
           </motion.div>
         </div>
+            <motion.button
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.3 }}
+            className="fixed bottom-8 right-8 bg-blue-500 text-white p-3 rounded-full shadow-lg"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+            ↑
+            </motion.button>
       </motion.div>
-    </div>
+      <footer className="py-8 text-center bg-gray-900 text-gray-500">
+        <p>Connect with me:</p>
+        <div className="flex justify-center gap-4 mt-2">
+            <MagneticButton>
+                <a href="https://github.com/andres844" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </MagneticButton>
+            <MagneticButton>
+                <a href="https://linkedin.com/in/andres-avelar" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            </MagneticButton>
+            <MagneticButton>
+                <a href="https://www.instagram.com/andresavelarr" target="_blank" rel="noopener noreferrer">Instagram</a>
+            </MagneticButton>
+        </div>
+    </footer>
+</div>
+    
   );
 };
 
