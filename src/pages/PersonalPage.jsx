@@ -1,93 +1,23 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
-import PhotoCarousel from '../components/PhotoCarousel'; 
+import React, { useState, useEffect } from 'react';
+import { motion, useScroll } from 'framer-motion';
+import PhotoCarousel from '../components/PhotoCarousel';
 
-// Performance optimization for the PersonalPage component
 const PersonalPage = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [activeSection, setActiveSection] = useState(null);
+  const { scrollYProgress } = useScroll(); // Hook to track scroll progress
 
-  // Define photo arrays outside of render to prevent recreation on each render
-  const runningPhotos = [
-    "/running1.png",
-    "/sunriserun.png",
-    "/sunsetrun.png",
-    "/sunsetrun2.png",
-  ];
-  const astroPics = [
-    "/crab.png",
-    "/pacman.png",
-    "/owl.png",
-    "/andromeda.png",
-    "/jupiter.png",
-    "/moon.png",
-    "/mars.png",
-  ];
-  const climbingPhotos = ["/climbing1.png", "/climbing2.png", "/rock.png", "/climbing3.png"];
-  const travelPhotos = [
-    "/swiss2.png",
-    "/tokyo1.png",
-    "/kyotostairs.png",
-    "/italy.png",
-    "/fuji.png",
-    "/osaka.png",
-    "/kobe.png",
-    "/thaisteak.png",
-    "/elephant.png",
-    "/germany.png",
-    "/italy2.png",
-    "/swiss.png",
-    "/thai2.png",
-    "/ramen.png",
-    "/kyoto.png",
-    "/thai1.png",
-];
-  const hikingPhotos = [
-    "/lizards.png",
-    "/tangerine2.png",
-    "/hikegroup.png",
-    "/creek.png",
-    "/sunsethike.png",
-    "/7falls.png",
-  ];
-
-  // IntersectionObserver to track visible sections
   useEffect(() => {
     setIsVisible(true);
-    
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      { threshold: 0.3 }
-    );
-
-    document.querySelectorAll('section[id]').forEach((section) => {
-      observer.observe(section);
-    });
-
-    return () => observer.disconnect();
   }, []);
-
-  // Section component for reusability and code organization
-  const HobbySection = ({ id, title, children, emoji = "", reverse = false }) => (
-    <div 
-      id={id}
-      className="mb-12 bg-gray-800 bg-opacity-50 backdrop-blur-lg p-8 rounded-lg hover:bg-opacity-70 transition-all"
-    >
-      <h3 className="text-2xl font-bold mb-4">{title} {emoji}</h3>
-      <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 ${reverse ? 'md:flex md:flex-row-reverse' : ''}`}>
-        {children}
-      </div>
-    </div>
-  );
 
   return (
     <div className="pt-20 pb-16">
+      {/* Scroll Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-2 bg-blue-500 origin-left z-50"
+        style={{ scaleX: scrollYProgress }}
+      />
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -101,7 +31,7 @@ const PersonalPage = () => {
             alt="Andres Avelar"
             className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
             whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            transition={{ type: 'spring', stiffness: 300 }}
             loading="eager"
           />
         </div>
@@ -155,7 +85,7 @@ const PersonalPage = () => {
                 <li>400m: 50.9 sec</li>
               </ul>
             </div>
-            <PhotoCarousel photos={runningPhotos} speed={25} />
+            <PhotoCarousel photos={["/running1.png", "/sunriserun.png", "/sunsetrun.png", "/sunsetrun2.png"]} speed={25} />
           </HobbySection>
 
           {/* Astrophotography */}
@@ -172,12 +102,12 @@ const PersonalPage = () => {
                 <li>Mars</li>
               </ul>
             </div>
-            <PhotoCarousel photos={astroPics} speed={35} />
+            <PhotoCarousel photos={["/crab.png", "/pacman.png", "/owl.png", "/andromeda.png", "/jupiter.png", "/moon.png", "/mars.png"]} speed={35} />
           </HobbySection>
 
           {/* Rock Climbing */}
           <HobbySection id="climbing" title="Rock Climbing" emoji="🏔️ 🧗" reverse={true}>
-            <PhotoCarousel photos={climbingPhotos} speed={25} />
+            <PhotoCarousel photos={["/climbing1.png", "/climbing2.png", "/rock.png", "/climbing3.png"]} speed={25} />
             <div>
               <p className="text-gray-300 mb-4">
                 Maxed out at 5.11b; aiming for 5.12+ by the end of 2025.
@@ -187,28 +117,26 @@ const PersonalPage = () => {
 
           {/* Solo Travel */}
           <HobbySection id="travel" title="Solo Travel" emoji="🌎 🛫">
-              {/* Carousel first, so it spans the entire width */}
-              <PhotoCarousel photos={travelPhotos} speed={50} />
-              {/* Text Content */}
-              <div>
-                <p className="text-gray-300 mb-3">
-                  Passionate about experiencing new cultures and environments.
-                </p>
-                <p className="text-gray-300 mb-4 text-2xl">
-                  🇩🇪 🇫🇷 🇨🇭 🇦🇹 🇮🇹 🇹🇭 🇯🇵
-                </p>
-                <p className="text-gray-300 mb-3">
-                  Most memorable moment: almost getting attacked by a wild boar in Kyoto, Japan.
-                </p>
-                <p className="text-gray-300">
-                  Next up: 🇧🇷 🇨🇷 🇬🇧 🇪🇸
-                </p>
-              </div>
+            <PhotoCarousel photos={["/swiss2.png", "/tokyo1.png", "/kyotostairs.png", "/italy.png", "/fuji.png", "/osaka.png", "/kobe.png", "/thaisteak.png", "/elephant.png", "/germany.png", "/italy2.png", "/swiss.png", "/thai2.png", "/ramen.png", "/kyoto.png", "/thai1.png"]} speed={50} />
+            <div>
+              <p className="text-gray-300 mb-3">
+                Passionate about experiencing new cultures and environments.
+              </p>
+              <p className="text-gray-300 mb-4 text-2xl">
+                🇩🇪 🇫🇷 🇨🇭 🇦🇹 🇮🇹 🇹🇭 🇯🇵
+              </p>
+              <p className="text-gray-300 mb-3">
+                Most memorable moment: almost getting attacked by a wild boar in Kyoto, Japan.
+              </p>
+              <p className="text-gray-300">
+                Next up: 🇧🇷 🇨🇷 🇬🇧 🇪🇸
+              </p>
+            </div>
           </HobbySection>
 
           {/* Hiking */}
           <HobbySection id="hiking" title="Hiking" emoji="🥾 🏔️">
-            <PhotoCarousel photos={hikingPhotos} speed={25} />
+            <PhotoCarousel photos={["/lizards.png", "/tangerine2.png", "/hikegroup.png", "/creek.png", "/sunsethike.png", "/7falls.png"]} speed={25} />
             <div>
               <p className="text-gray-300 mb-4">
                 Exploring Santa Barbara and Montecito mountains with breathtaking views.
@@ -220,7 +148,7 @@ const PersonalPage = () => {
                 <li>Lizards Mouth Point – Short climb, best view of UCSB</li>
                 <li>Cold Spring Trail – Creek and forest scenery</li>
                 <li>Montecito Hot Springs – Relaxing post-hike pools</li>
-                <li>7 Falls – Refreshing pools and waterfalls </li>
+                <li>7 Falls – Refreshing pools and waterfalls</li>
                 <li>Tangerine Falls – A bit technical but so worth it</li>
               </ul>
               <p className="text-gray-300">
@@ -230,6 +158,7 @@ const PersonalPage = () => {
           </HobbySection>
         </motion.section>
       </div>
+      
       {/* Back to Top Button */}
       <motion.button
         whileHover={{ scale: 1.1 }}
@@ -242,5 +171,20 @@ const PersonalPage = () => {
     </div>
   );
 };
+
+// Reusable HobbySection Component
+const HobbySection = ({ id, title, children, emoji = "", reverse = false }) => (
+  <div 
+    id={id}
+    className="mb-12 bg-gray-800 bg-opacity-50 backdrop-blur-lg p-8 rounded-lg hover:bg-opacity-70 transition-all"
+  >
+    <h3 className="text-2xl font-bold mb-4">
+      {title} {emoji}
+    </h3>
+    <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 ${reverse ? 'md:flex md:flex-row-reverse' : ''}`}>
+      {children}
+    </div>
+  </div>
+);
 
 export default PersonalPage;

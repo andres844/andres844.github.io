@@ -48,7 +48,6 @@ const PhotoCarousel = ({ photos, speed = 20 }) => {
             src={photo}
             alt={`Slide ${index % photos.length + 1}`}
             className="w-auto h-80 object-cover rounded-md shadow-md mr-2 flex-shrink-0 min-w-0"
-            loading="lazy"
           />
         ))}
       </motion.div>
