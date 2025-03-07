@@ -33,11 +33,15 @@ const MagneticButton = ({ children, className }) => {
       onMouseLeave={handleMouseLeave}
       animate={{ x: position.x, y: position.y }}
       transition={{ type: "spring", stiffness: 150, damping: 15 }}
-      className={`relative inline-flex items-center justify-center 
-                 bg-gradient-to-r from-blue-500 to-purple-500 
-                 text-white font-medium py-2 px-4 rounded-lg 
-                 hover:from-blue-600 hover:to-purple-600 
-                 transform transition-all duration-200 ${className}`}
+      className={`
+        relative inline-flex items-center justify-center
+        bg-gradient-to-r from-blue-500 to-purple-500
+        text-white font-medium py-3 px-6 rounded-lg
+        hover:from-blue-600 hover:to-purple-600
+        active:from-blue-700 active:to-purple-700
+        transform transition-all duration-200
+        ${className}
+      `}
     >
       {children}
     </motion.button>
