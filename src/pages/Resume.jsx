@@ -112,7 +112,7 @@ const Resume = () => {
               </div>
               <ul className="list-disc list-inside text-gray-300 mt-2">
                 <li>Awarded full scholarship to take Computational Biology with Python over summer quarter</li>
-                <li>Experimented with Genone sequencing, wildlife ecology simulations, and epidemiology simulations</li>
+                <li>Experimented with Genome sequencing, wildlife ecology simulations, and epidemiology simulations</li>
               </ul>
             </div>
           </div>
