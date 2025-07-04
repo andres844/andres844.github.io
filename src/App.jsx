@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom'; // Change BrowserRouter to HashRouter
 import Resume from './pages/Resume';
 import PersonalPage from './pages/PersonalPage';
 import Navbar from './components/Navbar';
@@ -20,4 +20,3 @@ const App = () => {
 };
 
 export default App;
-
