@@ -132,6 +132,15 @@ const Resume = () => {
           {/* Experience Card Template */}
           {[
             {
+              title: 'Data Scientist - BNY Mellon',
+              dates: 'June 2026 - Current',
+              location: 'Pittsburgh, PA',
+              points: [
+                'Automating data pipelines, ongoing project'
+              ],
+              delay: 0,
+            },
+            {
               title: 'President - BlockchainUCSB',
               dates: 'June 2024 - Current',
               location: 'Santa Barbara, CA',
@@ -142,7 +151,7 @@ const Resume = () => {
                 'Analyzed DEX vs. CEX risks using Artemis data & DeFi principles under Prof. Malkhi.',
                 'Assisted in joint research with Computer Science and Economics Departments; optimized ordering algorithims for Automated Market Makers.',
               ],
-              delay: 0,
+              delay: 0.1,
             },
             {
               title: 'Machine Learning Engineer - 2430 Group',
@@ -154,7 +163,7 @@ const Resume = () => {
                 'Engineered the Glean AI app (Google Drive API, Postman) to streamline research and cut processing time by 20%.',
                 'Fine-tuned YOLOv8 via Roboflow, reaching 94% test accuracy.',
               ],
-              delay: 0.1,
+              delay: 0.2,
             },
             {
               title: 'Systems Operator - UCSB Information Technology',
@@ -223,9 +232,15 @@ const Resume = () => {
                 delay: 0,
               },
               {
-                title: 'Portfolio Analysis Tool',
-                description: 'Developed a tool for analyzing crypto portfolio performance and risk metrics',
-                tags: ['Python', 'pandas', 'FastAPI'],
+                title: 'Time Series Forecasting',
+                description: 'Extensively analyzed and forecasted weather time series data using ARIMA, SARIMA, and custom visualizations',
+                tags: ['R Studio', 'ggplot2'],
+                delay: 0,
+              },
+              {
+                title: 'Quantitative Backtesting Framework',
+                description: 'Developed Monte Carlo simulation to backtest trading strategies using historical data, including walk-forward analysis',
+                tags: ['Scikit Learn', 'Random Forest', 'Donchian Breakout Strategy'],
                 delay: 0.1,
               },
               {
@@ -287,7 +302,7 @@ const Resume = () => {
               {
                 header: 'Finance',
                 content:
-                  'Futures/Options trading (Level II market data), TradingView, Artemis Data Analytics, Etherscan, Kucoin',
+                  'Futures/Options trading (Level II market data), TradoVate, TradingView, Artemis Data Analytics, Etherscan, Kucoin',
                 delay: 0.1,
               },
               {

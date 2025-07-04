@@ -53,8 +53,8 @@ const PersonalPage = () => {
           className="mb-16 text-center"
         >
           <blockquote className="text-2xl italic text-gray-300 max-w-2xl mx-auto">
-            "Education is the kindling of a flame, not the filling of a vessel."
-            <footer className="text-lg mt-2">- Socrates</footer>
+            "The medium is the message"
+            <footer className="text-lg mt-2">- Marshall McLuhan</footer>
           </blockquote>
         </motion.div>
 
