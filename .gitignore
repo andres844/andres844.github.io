@@ -1,1 +1,5 @@
 node_modules
+# Build output (not committed)
+dist/
+# Old GH Pages artifacts (cleanup)
+docs/
