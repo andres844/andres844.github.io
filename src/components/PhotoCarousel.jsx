@@ -64,10 +64,13 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
   useEffect(() => {
     if (!trackRef.current) return;
 
-    const preload = () =>
-      Promise.race([
+    // Only lightly preload a couple images to reduce initial bandwidth
+    const preload = () => {
+      const preloadCount = Math.min(2, photos.length);
+      const subset = photos.slice(0, preloadCount);
+      return Promise.race([
         Promise.all(
-          photos.map(
+          subset.map(
             (src) =>
               new Promise((resolve) => {
                 const img = new Image();
@@ -80,16 +83,17 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
               })
           )
         ),
-        new Promise((r) => setTimeout(r, 800)),
+        new Promise((r) => setTimeout(r, 300)),
       ]);
+    };
 
     let running = true;
 
     const start = async () => {
       await preload();
       if (!measure()) {
-        // Try next frame if not measurable yet
-        requestAnimationFrame(start);
+        // Retry shortly without busy looping if images not ready yet
+        setTimeout(start, 120);
         return;
       }
       lastTsRef.current = 0;
@@ -166,6 +170,7 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
             className={`${itemWidthClass ? itemWidthClass : 'w-auto'} ${itemHeightClass} object-cover rounded-md shadow-md flex-shrink-0 min-w-0`}
             loading="lazy"
             decoding="async"
+            fetchpriority="low"
             draggable="false"
             aria-hidden={index >= photos.length}
           />
