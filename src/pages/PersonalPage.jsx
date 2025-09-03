@@ -24,18 +24,22 @@ const PersonalPage = () => {
         className="container mx-auto px-4 mb-12 text-center"
       >
         <div className="flex justify-center mb-6">
-          <motion.img
-            src="pic.png"
-            alt="Andres Avelar"
-            className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-            width={192}
-            height={192}
-            loading="eager"
-            decoding="async"
-            fetchpriority="high"
-          />
+          <picture>
+            <source srcSet="pic.avif" type="image/avif" />
+            <source srcSet="pic.webp" type="image/webp" />
+            <motion.img
+              src="pic.png"
+              alt="Andres Avelar"
+              className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+              width={192}
+              height={192}
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </picture>
         </div>
         <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-400">
           Personal Space

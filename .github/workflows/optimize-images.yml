@@ -26,6 +26,38 @@ jobs:
           pngQuality: 80
           ignorePaths: 'node_modules/**,dist/**'
 
+      - name: Install encoders (cwebp, avifenc)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webp || true
+          sudo apt-get install -y libavif-tools || sudo apt-get install -y libavif-bin || true
+
+      - name: Generate AVIF/WEBP variants in public/
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          for f in public/**/*.{jpg,jpeg,png,JPG,JPEG,PNG}; do
+            [ -f "$f" ] || continue
+            base="${f%.*}"
+            avif="$base.avif"
+            webp="$base.webp"
+            # Create AVIF if encoder available
+            if command -v avifenc >/dev/null 2>&1; then
+              if [ ! -f "$avif" ] || [ "$f" -nt "$avif" ]; then
+                echo "AVIF -> $avif"
+                avifenc --min 30 --max 35 --speed 6 "$f" "$avif" || true
+              fi
+            fi
+            # Create WEBP if encoder available
+            if command -v cwebp >/dev/null 2>&1; then
+              if [ ! -f "$webp" ] || [ "$f" -nt "$webp" ]; then
+                echo "WEBP -> $webp"
+                cwebp -quiet -q 80 "$f" -o "$webp" || true
+              fi
+            fi
+          done
+
       - name: Commit optimized images
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
