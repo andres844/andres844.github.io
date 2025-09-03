@@ -5,6 +5,7 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
   const containerRef = useRef(null);
   const trackRef = useRef(null);
   const reqRef = useRef(0);
+  const pauseTimerRef = useRef(0);
   const xRef = useRef(0);
   const widthRef = useRef(0);
   const lastTsRef = useRef(0);
@@ -33,11 +34,11 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
       (entries) => {
         entries.forEach((entry) => {
           if (entry.target === containerRef.current) {
-            setPaused(!entry.isIntersecting);
+            setPaused(!entry.isIntersecting || entry.intersectionRatio < 0.6);
           }
         });
       },
-      { rootMargin: '0px', threshold: 0.1 }
+      { rootMargin: '0px', threshold: [0, 0.6, 1] }
     );
     io.observe(containerRef.current);
     return () => io.disconnect();
@@ -47,7 +48,15 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
   const measure = () => {
     if (!trackRef.current) return 0;
     const w = trackRef.current.scrollWidth / 2;
+    const prev = widthRef.current || 0;
     widthRef.current = w;
+    if (prev && w && trackRef.current) {
+      // Keep offset within new bounds to avoid jump
+      if (xRef.current <= -w) {
+        xRef.current = -(Math.abs(xRef.current) % w);
+      }
+      trackRef.current.style.transform = `translate3d(${xRef.current}px,0,0)`;
+    }
     return w;
   };
 
@@ -86,14 +95,14 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
       lastTsRef.current = 0;
       const step = (ts) => {
         if (!running) return;
-        if (reduceMotion) {
-          reqRef.current = requestAnimationFrame(step);
-          return;
-        }
-        if (paused) {
-          // keep lastTs in sync to avoid jump on resume
+        // Pause conditions: reduced motion, intersection below threshold, or tab hidden
+        if (reduceMotion || paused || document.hidden) {
           lastTsRef.current = ts;
-          reqRef.current = requestAnimationFrame(step);
+          // When paused, idle for 200ms to reduce CPU
+          if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+          pauseTimerRef.current = setTimeout(() => {
+            reqRef.current = requestAnimationFrame(step);
+          }, 200);
           return;
         }
         if (!lastTsRef.current) lastTsRef.current = ts;
@@ -115,8 +124,19 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
     return () => {
       running = false;
       if (reqRef.current) cancelAnimationFrame(reqRef.current);
+      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
     };
   }, [photos, speed, reduceMotion, paused]);
+
+  // Re-measure track on resize (responsive widths)
+  useEffect(() => {
+    if (!trackRef.current) return;
+    const ro = new ResizeObserver(() => {
+      measure();
+    });
+    ro.observe(trackRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   const handleMouseEnter = () => setPaused(true);
   const handleMouseLeave = () => setPaused(false);
@@ -133,7 +153,7 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
     <div
       ref={containerRef}
       className="overflow-hidden relative"
-      style={maskStyle}
+      style={{ ...maskStyle, contain: 'paint' }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -146,6 +166,8 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
             className={`${itemWidthClass ? itemWidthClass : 'w-auto'} ${itemHeightClass} object-cover rounded-md shadow-md flex-shrink-0 min-w-0`}
             loading="lazy"
             decoding="async"
+            draggable="false"
+            aria-hidden={index >= photos.length}
           />
         ))}
       </div>

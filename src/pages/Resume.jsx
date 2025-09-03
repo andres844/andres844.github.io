@@ -38,7 +38,7 @@ const Resume = () => {
               transition={{ type: 'spring', stiffness: 300 }}
             />
           </div>
-          <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-yellow-300">
+          <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-yellow-300">
             Andres Avelar
           </h1>
           <div className="flex flex-col md:flex-row justify-center items-center gap-3 mb-4">
@@ -345,7 +345,7 @@ const Resume = () => {
       <motion.button
         whileHover={{ scale: 1.1 }}
         transition={{ duration: 0.3 }}
-        className="fixed bottom-8 right-8 bg-blue-500 text-white p-3 rounded-full shadow-lg"
+        className="fixed bottom-8 right-8 bg-yellow-300 text-black p-3 rounded-full shadow-lg"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
         ↑

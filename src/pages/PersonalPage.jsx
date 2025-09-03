@@ -33,7 +33,7 @@ const PersonalPage = () => {
             loading="eager"
           />
         </div>
-        <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-500">
+        <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-400">
           Personal Space
         </h1>
         <p className="text-xl text-gray-300 max-w-lg mx-auto">
@@ -175,7 +175,7 @@ const PersonalPage = () => {
       <motion.button
         whileHover={{ scale: 1.1 }}
         transition={{ duration: 0.3 }}
-        className="fixed bottom-8 right-8 bg-blue-500 text-white p-3 rounded-full shadow-lg"
+        className="fixed bottom-8 right-8 bg-yellow-300 text-black p-3 rounded-full shadow-lg"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
         ↑
