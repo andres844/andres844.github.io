@@ -30,22 +30,18 @@ const Resume = () => {
           transition={{ duration: 1 }}
         >
           <div className="flex justify-center mb-6">
-            <picture>
-              <source srcSet="pic.avif" type="image/avif" />
-              <source srcSet="pic.webp" type="image/webp" />
-              <motion.img
-                src="pic.png"
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 300 }}>
+              <img
+                src="/pic.png"
                 alt="Andres Avelar"
                 className="w-40 h-40 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: 'spring', stiffness: 300 }}
                 width={160}
                 height={160}
                 loading="eager"
                 decoding="async"
                 fetchpriority="high"
               />
-            </picture>
+            </motion.div>
           </div>
           <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-yellow-300">
             Andres Avelar

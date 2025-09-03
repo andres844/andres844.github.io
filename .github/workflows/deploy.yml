@@ -29,6 +29,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install encoders (WEBP)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webp
+
+      - name: Generate WEBP variants in public/
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          for f in public/**/*.{jpg,jpeg,png,JPG,JPEG,PNG}; do
+            [ -f "$f" ] || continue
+            base="${f%.*}"
+            webp="$base.webp"
+            if [ ! -f "$webp" ] || [ "$f" -nt "$webp" ]; then
+              echo "WEBP -> $webp"
+              cwebp -quiet -q 80 "$f" -o "$webp" || true
+            fi
+          done
+
       - name: Build
         run: npm run build
 
@@ -53,4 +73,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-

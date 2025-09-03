@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import SmartImage from './SmartImage';
 
 // Seamless, JS-driven loop (no snap), with hover/offscreen pause
 const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:h-80', itemWidthClass }) => {
@@ -153,19 +154,6 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
       'linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 8%, rgba(0,0,0,1) 92%, rgba(0,0,0,0))',
   };
 
-  const toAltSources = (src) => {
-    try {
-      const q = src.indexOf('?');
-      const clean = q === -1 ? src : src.slice(0, q);
-      if (!/\.(png|jpe?g)$/i.test(clean)) return { avif: null, webp: null };
-      const base = clean.replace(/\.(png|jpe?g)$/i, '');
-      const query = q === -1 ? '' : src.slice(q);
-      return { avif: `${base}.avif${query}`, webp: `${base}.webp${query}` };
-    } catch {
-      return { avif: null, webp: null };
-    }
-  };
-
   return (
     <div
       ref={containerRef}
@@ -175,29 +163,19 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
       onMouseLeave={handleMouseLeave}
     >
       <div ref={trackRef} className="flex gap-2 will-change-transform">
-        {extendedPhotos.map((photo, index) => {
-          const { avif, webp } = toAltSources(photo);
-          const isDup = index >= photos.length;
-          return (
-            <picture
-              key={index}
-              aria-hidden={isDup}
-              className={`${itemWidthClass ? itemWidthClass : 'w-auto'} ${itemHeightClass} rounded-md shadow-md flex-shrink-0 min-w-0 block`}
-            >
-              {avif && <source srcSet={avif} type="image/avif" />}
-              {webp && <source srcSet={webp} type="image/webp" />}            
-              <img
-                src={photo}
-                alt={`Slide ${index % photos.length + 1}`}
-                className={`w-full h-full object-cover rounded-md`}
-                loading="lazy"
-                decoding="async"
-                fetchpriority="low"
-                draggable="false"
-              />
-            </picture>
-          );
-        })}
+        {extendedPhotos.map((photo, index) => (
+          <SmartImage
+            key={index}
+            src={photo}
+            alt={`Slide ${index % photos.length + 1}`}
+            className={`${itemWidthClass ? itemWidthClass : 'w-auto'} ${itemHeightClass} object-cover rounded-md shadow-md flex-shrink-0 min-w-0`}
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+            draggable="false"
+            aria-hidden={index >= photos.length}
+          />
+        ))}
       </div>
     </div>
   );
