@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll } from 'framer-motion';
 import PhotoCarousel from '../components/PhotoCarousel';
+import AsciiWavesBackground from '../components/AsciiWavesBackground';
 
 const PersonalPage = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -11,12 +12,9 @@ const PersonalPage = () => {
   }, []);
 
   return (
-    <div className="pt-20 pb-16">
-      {/* Scroll Progress Bar */}
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-2 bg-blue-500 origin-left z-50"
-        style={{ scaleX: scrollYProgress }}
-      />
+    <div className="pt-20 pb-16 relative inset-0 z-10">
+      {/* Keep ASCII behind all content on this page */}
+      <AsciiWavesBackground opacity={0.06} speed={0.1} period={18} zIndex={0} />
 
       {/* Header */}
       <motion.div
@@ -35,7 +33,7 @@ const PersonalPage = () => {
             loading="eager"
           />
         </div>
-        <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-yellow-300">
+        <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-500">
           Personal Space
         </h1>
         <p className="text-xl text-gray-300 max-w-lg mx-auto">
@@ -67,7 +65,7 @@ const PersonalPage = () => {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+          <h2 className="text-3xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-500">
             Hobbies & Interests
           </h2>
 
@@ -85,7 +83,11 @@ const PersonalPage = () => {
                 <li>400m: 50.9 sec</li>
               </ul>
             </div>
-            <PhotoCarousel photos={["/running1.png", "/sunriserun.png", "/sunsetrun.png", "/sunsetrun2.png"]} speed={25} />
+            <PhotoCarousel
+              photos={["/running1.png", "/sunriserun.png", "/sunsetrun.png", "/sunsetrun2.png"]}
+              speed={22}
+              itemHeightClass="h-52 md:h-60 lg:h-64"
+            />
           </HobbySection>
 
           {/* Astrophotography */}
@@ -102,12 +104,22 @@ const PersonalPage = () => {
                 <li>Mars</li>
               </ul>
             </div>
-            <PhotoCarousel photos={["/crab.png", "/pacman.png", "/owl.png", "/andromeda.png", "/jupiter.png", "/moon.png", "/mars.png"]} speed={35} />
+            <PhotoCarousel
+              photos={["/crab.png", "/pacman.png", "/owl.png", "/andromeda.png", "/jupiter.png", "/moon.png", "/mars.png"]}
+              speed={30}
+              itemWidthClass="w-80 md:w-96 lg:w-[28rem]"
+              itemHeightClass="h-64 md:h-72 lg:h-80"
+            />
           </HobbySection>
 
           {/* Rock Climbing */}
           <HobbySection id="climbing" title="Rock Climbing" emoji="🏔️ 🧗" reverse={true}>
-            <PhotoCarousel photos={["/climbing1.png", "/climbing2.png", "/rock.png", "/climbing3.png"]} speed={25} />
+            <PhotoCarousel
+              photos={["/climbing1.png", "/climbing2.png", "/rock.png", "/climbing3.png"]}
+              speed={22}
+              itemWidthClass="w-44 md:w-56 lg:w-64"
+              itemHeightClass="h-60 md:h-64 lg:h-72"
+            />
             <div>
               <p className="text-gray-300 mb-4">
                 Maxed out at 5.11b; aiming for 5.12+ by the end of 2025.
@@ -176,9 +188,9 @@ const PersonalPage = () => {
 const HobbySection = ({ id, title, children, emoji = "", reverse = false }) => (
   <div 
     id={id}
-    className="mb-12 bg-gray-800 bg-opacity-50 backdrop-blur-lg p-8 rounded-lg hover:bg-opacity-70 transition-all"
+    className="mb-12 bg-gray-800 border border-white/10 p-8 rounded-lg shadow-xl transition-all"
   >
-    <h3 className="text-2xl font-bold mb-4">
+    <h3 className="text-2xl font-bold mb-2">
       {title} {emoji}
     </h3>
     <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 ${reverse ? 'md:flex md:flex-row-reverse' : ''}`}>

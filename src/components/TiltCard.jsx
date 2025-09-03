@@ -48,8 +48,7 @@ const TiltCard = ({ children }) => {
           transform: "translateZ(75px)",
           transformStyle: "preserve-3d",
         }}
-        className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg 
-                   hover:bg-opacity-70 transition-all duration-300 shadow-xl"
+        className="glass-card p-6 rounded-lg transition-all duration-300 shadow-xl"
       >
         {children}
       </div>

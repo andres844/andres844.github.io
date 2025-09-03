@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import MagneticButton from './MagneticButton';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -17,8 +16,9 @@ const Navbar = () => {
   }, []);
 
   // Updated classes so text is always fully opaque white.
-  const activeClasses = 'opacity-100 scale-95 shadow-inner';
-  const inactiveClasses = 'opacity-100'; // removed opacity and hover changes
+  const baseBtn = 'glass-card hover-change px-4 py-2 rounded-lg text-white transition-all';
+  const activeClasses = `${baseBtn} ring-1 ring-blue-400/40`;
+  const inactiveClasses = `${baseBtn}`;
 
   return (
     <motion.nav 
@@ -38,33 +38,19 @@ const Navbar = () => {
         </Link>
         
         <div className="flex space-x-4">
-          <MagneticButton
-            className={`
-              ${location.pathname === '/'
-                ? activeClasses
-                : inactiveClasses
-              }
-              active:scale-95 active:shadow-inner
-            `}
+          <Link
+            to="/"
+            className={`${location.pathname === '/' ? activeClasses : inactiveClasses}`}
           >
-            <Link to="/" className="block w-full text-center text-white">
-              Resume
-            </Link>
-          </MagneticButton>
+            Resume
+          </Link>
           
-          <MagneticButton
-            className={`
-              ${location.pathname === '/personal'
-                ? activeClasses
-                : inactiveClasses
-              }
-              active:scale-95 active:shadow-inner
-            `}
+          <Link
+            to="/personal"
+            className={`${location.pathname === '/personal' ? activeClasses : inactiveClasses}`}
           >
-            <Link to="/personal" className="block w-full text-center text-white">
-              Personal
-            </Link>
-          </MagneticButton>
+            Personal
+          </Link>
         </div>
       </div>
     </motion.nav>

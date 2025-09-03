@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import ScrollProgress from '../components/ScrollProgress';
 import TiltCard from '../components/TiltCard';
-import MagneticButton from '../components/MagneticButton';
+import AsciiWavesBackground from '../components/AsciiWavesBackground';
 
 // Animation variants for reusability
 const fadeInUp = {
@@ -19,8 +18,8 @@ const Resume = () => {
   }, []);
 
   return (
-    <div className="pt-20 pb-16">
-      <ScrollProgress />
+    <div className="pt-20 pb-16 relative z-10">
+      <AsciiWavesBackground />
 
       {/* Header Section */}
       <header className="container mx-auto px-4 mb-12 text-center">
@@ -43,51 +42,105 @@ const Resume = () => {
             Andres Avelar
           </h1>
           <div className="flex flex-col md:flex-row justify-center items-center gap-3 mb-4">
-            <p className="text-xl text-gray-300">Statistics & Data Science | Economics</p>
+            <p className="text-xl text-gray-300">Statistics & Data Science + Economics</p>
             <span className="hidden md:inline text-gray-500">•</span>
             <p className="text-xl text-gray-300">UCSB '26</p>
           </div>
-          <div className="flex flex-wrap justify-center gap-3 mb-6">
-            <a href="mailto:andresavelar@ucsb.edu" className="text-blue-400 hover:text-blue-300">
-              (661) 304-8868 | andresavelar@ucsb.edu
-            </a>
-          </div>
-          <div className="flex justify-center gap-4">
-            <MagneticButton className="opacity-100 active:scale-95 active:shadow-inner">
-              <a
-                href="https://github.com/andres844"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full text-center text-white"
-              >
-                GitHub
-              </a>
-            </MagneticButton>
-            <MagneticButton className="opacity-100 active:scale-95 active:shadow-inner">
-              <a
-                href="https://linkedin.com/in/andres-avelar"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full text-center text-white"
-              >
-                LinkedIn
-              </a>
-            </MagneticButton>
-          </div>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            I design and build data products and ML systems with a focus on
+            clarity, performance, and measurable outcomes.
+          </p>
         </motion.div>
       </header>
 
-      <main className="container mx-auto px-4">
-        {/* Education Section */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          variants={fadeInUp}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-          className="mb-12"
-        >
-          <h2 className="text-2xl font-bold mb-4 pb-2 border-b border-blue-500">Education</h2>
+      {/* Main Content: 2-column layout */}
+      <main className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Sidebar */}
+        <aside className="lg:col-span-1 space-y-6 lg:sticky lg:top-24 self-start">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            variants={fadeInUp}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="glass-card hover-change p-6 rounded-lg"
+          >
+            <h3 className="text-lg font-semibold mb-2">Contact</h3>
+            <div className="space-y-2 text-gray-300">
+              <a href="mailto:andresavelar@ucsb.edu" className="text-blue-400 hover:text-blue-300 block">
+                andresavelar@ucsb.edu
+              </a>
+              <p className="text-gray-300">Santa Barbara, CA</p>
+              <div className="flex gap-3">
+                <a
+                  href="https://github.com/andres844"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300"
+                >
+                  GitHub
+                </a>
+                <span className="text-gray-600">•</span>
+                <a
+                  href="https://linkedin.com/in/andres-avelar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300"
+                >
+                  LinkedIn
+                </a>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            variants={fadeInUp}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            viewport={{ once: true }}
+            className="glass-card hover-change p-6 rounded-lg"
+          >
+            <h3 className="text-lg font-semibold mb-2">Skills</h3>
+            <div className="space-y-4">
+              {[
+                {
+                  header: 'Frameworks/Tools',
+                  content:
+                    'Docker, FastAPI, Git, Google AI Studio, Google Colab, HuggingFace, MongoDB, N8N (AI Agents), Node.js, PyTorch, Qdrant (Vector DB), RStudio, React, Scrapy, SciKit-learn, Siren (Graph DB), .NET, VS',
+                },
+                {
+                  header: 'Finance',
+                  content:
+                    'Futures/Options (Level II), TradoVate, TradingView, Capital IQ, Artemis, Etherscan, Kucoin',
+                },
+                {
+                  header: 'Languages',
+                  content:
+                    'Spanish (proficient), Python, SQL, R, C#, Java, JS, SAS, STATA, Solidity, Swift, HTML, CSS',
+                },
+              ].map((s, i) => (
+                <div key={i}>
+                  <h4 className="font-medium text-gray-200">{s.header}</h4>
+                  <p className="text-gray-300 text-sm">{s.content}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </aside>
+
+        {/* Main column */}
+        <section className="lg:col-span-2">
+          {/* Education Section */}
+          <motion.section
+            initial="hidden"
+            whileInView="visible"
+            variants={fadeInUp}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
+            className="mb-12"
+          >
+            <h2 className="text-2xl font-bold mb-4 pb-2 border-b border-blue-500">Education</h2>
           <div className="pl-2 space-y-8">
             {/* UCSB Section */}
             <div>
@@ -132,11 +185,14 @@ const Resume = () => {
           {/* Experience Card Template */}
           {[
             {
-              title: 'Data Scientist - BNY Mellon',
-              dates: 'June 2026 - Current',
+              title: 'AI Engineer - BNY Mellon',
+              dates: 'June 2026 - August 2026',
               location: 'Pittsburgh, PA',
               points: [
-                'Automating data pipelines, ongoing project'
+                'Multi Agent LLM-as-a-Judge pipeline for Quantitative Cyber Risk Team: Automated risk assessment of complete CRIv2.1 and MITRE ATT&CK Frameworks with respect to Global BNY business units.',
+                'Saved 270+ hours of manual labor by leveraging fine-tuned locally hosted LLMs',
+                'Utilized Parallel Processing and Advanced Prompt Engineering to optimize agent workflows and reduce latency by 85%'
+
               ],
               delay: 0,
             },
@@ -167,7 +223,7 @@ const Resume = () => {
             },
             {
               title: 'Systems Operator - UCSB Information Technology',
-              dates: 'September 2023 - Current',
+              dates: 'September 2023 - April 2025',
               location: 'Santa Barbara, CA',
               points: [
                 'Deployed/imaged ~2,500 computers for 35K users; configured BIOS and mitigated tech risks.',
@@ -189,27 +245,28 @@ const Resume = () => {
               delay: 0.3,
             },
           ].map((job, index) => (
-            <TiltCard key={index}>
-              <motion.div
-                initial="hidden"
-                whileInView="visible"
-                variants={fadeInUp}
-                transition={{ duration: 0.6, delay: job.delay }}
-                viewport={{ once: true }}
-                className="mb-8 bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all"
-              >
-                <div className="flex flex-col md:flex-row justify-between mb-2">
-                  <h3 className="text-xl font-semibold">{job.title}</h3>
-                  <p className="text-gray-400">{job.dates}</p>
-                </div>
-                <p className="text-gray-400 mb-2">{job.location}</p>
-                <ul className="list-disc list-inside text-gray-300">
-                  {job.points.map((point, i) => (
-                    <li key={i}>{point}</li>
-                  ))}
-                </ul>
-              </motion.div>
-            </TiltCard>
+            <div className="mb-8" key={index}>
+              <TiltCard>
+                <motion.div
+                  initial="hidden"
+                  whileInView="visible"
+                  variants={fadeInUp}
+                  transition={{ duration: 0.6, delay: job.delay }}
+                  viewport={{ once: true }}
+                >
+                  <div className="flex flex-col md:flex-row justify-between mb-2">
+                    <h3 className="text-xl font-semibold">{job.title}</h3>
+                    <p className="text-gray-400">{job.dates}</p>
+                  </div>
+                  <p className="text-gray-400 mb-2">{job.location}</p>
+                  <ul className="list-disc list-inside text-gray-300">
+                    {job.points.map((point, i) => (
+                      <li key={i}>{point}</li>
+                    ))}
+                  </ul>
+                </motion.div>
+              </TiltCard>
+            </div>
           ))}
         </motion.section>
 
@@ -233,20 +290,20 @@ const Resume = () => {
               },
               {
                 title: 'Time Series Forecasting',
-                description: 'Extensively analyzed and forecasted weather time series data using ARIMA, SARIMA, and custom visualizations',
-                tags: ['R Studio', 'ggplot2'],
+                description: 'Extensively analyzed and forecasted weather time-series data using ARIMA and SARIMA models, leveraging R (including the forecast package for automatic ARIMA and state-space exponential smoothing) for model selection and diagnostics (ACF/PACF, stationarity tests), and presented insights through custom visualizations',
+                tags: ['R Studio', 'ggplot2', 'auto.arima'],
                 delay: 0,
               },
               {
                 title: 'Quantitative Backtesting Framework',
-                description: 'Developed Monte Carlo simulation to backtest trading strategies using historical data, including walk-forward analysis',
+                description: 'Implemented Monte Carlo simulation-driven backtesting with 10,000 step walk-forward optimization, leveraging Python, statistical resampling (e.g., bootstrapping/permutation testing), dynamic risk-adjusted performance metrics, and visualizations to evaluate strategy robustness across multiple market regimes.',
                 tags: ['Scikit Learn', 'Random Forest', 'Donchian Breakout Strategy'],
                 delay: 0.1,
               },
               {
                 title: 'Volatility Surface Visualization',
                 description:
-                  'Derived formula to visualize volatility smile/skew of options contracts to assess bias of given stock',
+                  'Derived formula to visualize volatility smile/skew of options contracts using Black–Scholes modeling, implied volatility extraction, and 3D surface plotting (Python/Matplotlib/NumPy) to assess bias of given stock',
                 tags: ['Polygon.io API', 'Matplotlib', 'SeaBorn'],
                 delay: 0.1,
               },
@@ -265,7 +322,7 @@ const Resume = () => {
                 variants={fadeInUp}
                 transition={{ duration: 0.6, delay: project.delay }}
                 viewport={{ once: true }}
-                className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
+                className="glass-card hover-change p-6 rounded-lg transition-all duration-300"
               >
                 <h3 className="text-xl font-bold mb-2">{project.title}</h3>
                 <p className="text-gray-300 mb-2">{project.description}</p>
@@ -281,52 +338,7 @@ const Resume = () => {
           </div>
         </motion.section>
 
-        {/* Skills Section */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          variants={fadeInUp}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-          className="mb-12"
-        >
-          <h2 className="text-2xl font-bold mb-4 pb-2 border-b border-blue-500">Skills</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                header: 'Frameworks/Tools',
-                content:
-                'Docker, FastAPI, Git, Google AI Studio, Google Colab, HuggingFace, MongoDB, N8N (AI Agents), Node.js, PyTorch, Qdrant (Vector Database), RStudio, React, Scrapy, SciKit-learn, Siren (Graph Database), .NET, Visual Studio',
-                delay: 0,
-              },
-              {
-                header: 'Finance',
-                content:
-                  'Futures/Options trading (Level II market data), TradoVate, TradingView, Artemis Data Analytics, Etherscan, Kucoin',
-                delay: 0.1,
-              },
-              {
-                header: 'Languages',
-                content:
-                  'Spanish (proficient), Python, SQL, R, C#, Java, JavaScript, SAS, STATA, Solidity, Swift, HTML, CSS',
-                delay: 0.2,
-              },
-            ].map((skill, i) => (
-              <motion.div
-                key={i}
-                initial="hidden"
-                whileInView="visible"
-                variants={fadeInUp}
-                transition={{ duration: 0.6, delay: skill.delay }}
-                viewport={{ once: true }}
-                className="bg-gray-800 bg-opacity-50 backdrop-blur-lg p-6 rounded-lg hover:bg-opacity-70 transition-all duration-300"
-              >
-                <h3 className="font-bold mb-2">{skill.header}</h3>
-                <p className="text-gray-300">{skill.content}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
+        </section>
       </main>
 
       {/* Back to Top Button */}
