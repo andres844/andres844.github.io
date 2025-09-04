@@ -23,3 +23,4 @@ const App = () => {
 };
 
 export default App;
+// things to update: gather experience title and company as you scroll down, to keep them in view at the top of screen. 
