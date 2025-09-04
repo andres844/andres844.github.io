@@ -251,6 +251,13 @@ const Resume = () => {
             },
           ].map((job, index) => (
             <div className="mb-8" key={index}>
+              {/* Sticky header for this job; stays above its own block */}
+              <div className="sticky top-24 z-20 mb-1">
+                <div className="glass-card px-6 py-2 rounded-lg w-full flex items-center justify-between">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-100">{job.title}</h3>
+                  <p className="text-gray-200 text-sm md:text-base">{job.dates}</p>
+                </div>
+              </div>
               <TiltCard>
                 <motion.div
                   initial="hidden"
@@ -259,10 +266,6 @@ const Resume = () => {
                   transition={{ duration: 0.6, delay: job.delay }}
                   viewport={{ once: true }}
                 >
-                  <div className="flex flex-col md:flex-row justify-between mb-2">
-                    <h3 className="text-xl font-semibold">{job.title}</h3>
-                    <p className="text-gray-400">{job.dates}</p>
-                  </div>
                   <p className="text-gray-400 mb-2">{job.location}</p>
                   <ul className="list-disc list-inside text-gray-300">
                     {job.points.map((point, i) => (
