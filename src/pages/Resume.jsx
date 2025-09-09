@@ -112,17 +112,17 @@ const Resume = () => {
                 {
                   header: 'Frameworks/Tools',
                   content:
-                    'Docker, FastAPI, Git, Google AI Studio, Google Colab, HuggingFace, MongoDB, N8N (AI Agents), Node.js, PyTorch, Qdrant (Vector DB), RStudio, React, Scrapy, SciKit-learn, Siren (Graph DB), .NET, VS',
+                    'Docker, FastAPI, Git, Google Vertex AI, Google Colab, HuggingFace, MongoDB, N8N (AI Agents), Node.js, PyTorch, Qdrant (Vector DB), RStudio, React, Scrapy, SciKit-learn, Siren (Graph DB), .NET, VS, NumPy, Pandas, XGBoost, LightGBM, CatBoost, SHAP, TensorFlow, Keras, MLflow, Spark, Snowflake, BigQuery, SciPy, SymPy, Postman, Ollama'
                 },
                 {
                   header: 'Finance',
                   content:
-                    'Futures/Options (Level II), TradoVate, TradingView, Capital IQ, Artemis, Etherscan, Kucoin',
+                    'Futures/Options trading (Level II market data), TradoVate, TradingView, Capital IQ, Artemis, Etherscan, Kucoin',
                 },
                 {
                   header: 'Languages',
                   content:
-                    'Spanish (proficient), Python, SQL, R, C#, Java, JS, SAS, STATA, Solidity, Swift, HTML, CSS',
+                    'Spanish (native), Python, SQL, R, C#, Java, JS, SAS, STATA, Solidity, Swift, HTML, CSS',
                 },
               ].map((s, i) => (
                 <div key={i}>
@@ -291,12 +291,6 @@ const Resume = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               {
-                title: 'AI Research Assistant',
-                description: 'Built a RAG-powered research assistant using LangChain and OpenAI API',
-                tags: ['Python', 'LangChain', 'OpenAI'],
-                delay: 0,
-              },
-              {
                 title: 'Time Series Forecasting',
                 description: 'Extensively analyzed and forecasted weather time-series data using ARIMA and SARIMA models, leveraging R (including the forecast package for automatic ARIMA and state-space exponential smoothing) for model selection and diagnostics (ACF/PACF, stationarity tests), and presented insights through custom visualizations',
                 tags: ['R Studio', 'ggplot2', 'auto.arima'],
@@ -316,10 +310,15 @@ const Resume = () => {
                 delay: 0.1,
               },
               {
+                title: 'AI Research Assistant',
+                description: 'Built a RAG-powered research assistant using LangChain and OpenAI API',
+                tags: ['Python', 'LangChain', 'OpenAI API'],
+                delay: 0,
+              },
+              {
                 title: 'Neural Network from scratch',
                 description:
-                  'Coded neural network in base Python to identify MNIST dataset, strengthening my theoretical knowledge',
-                tags: ['NumPy'],
+                  'Coded feedforward neural network in base Python to identify MNIST dataset, strengthening my theoretical knowledge',
                 delay: 0.1,
               },
             ].map((project, index) => (
@@ -334,13 +333,15 @@ const Resume = () => {
               >
                 <h3 className="text-xl font-bold mb-2">{project.title}</h3>
                 <p className="text-gray-300 mb-2">{project.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  {project.tags.map((tag, i) => (
-                    <span key={i} className="bg-blue-700 px-2 py-1 rounded text-sm">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                {project.tags && project.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.map((tag, i) => (
+                      <span key={i} className="bg-yellow-300 text-black px-2 py-1 rounded text-sm">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
