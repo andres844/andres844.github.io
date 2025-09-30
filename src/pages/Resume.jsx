@@ -30,11 +30,15 @@ const Resume = () => {
           transition={{ duration: 1 }}
         >
           <div className="flex justify-center mb-6">
-            <motion.div whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 300 }}>
+            <motion.div
+              className="relative z-20"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
               <img
                 src="/pic.png"
                 alt="Andres Avelar"
-                className="w-40 h-40 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
                 width={160}
                 height={160}
                 loading="eager"
