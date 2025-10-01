@@ -17,33 +17,40 @@ const PersonalPage = () => {
       <AsciiWavesBackground opacity={0.06} speed={0.1} period={18} zIndex={0} />
 
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: isVisible ? 1 : 0, y: 0 }}
-        transition={{ duration: 1 }}
-        className="container mx-auto px-4 mb-12 text-center"
-      >
+      <header className="container mx-auto px-4 mb-12 text-center">
         <div className="flex justify-center mb-6">
-          <motion.img
-            src="/pic.png"
-            alt="Andres Avelar"
-            className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+          <motion.div
+            className="relative z-20"
             whileHover={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 300 }}
-            width={192}
-            height={192}
-            loading="eager"
-            decoding="async"
-            fetchpriority="high"
-          />
+            initial={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <img
+              src="/pic.png"
+              alt="Andres Avelar"
+              className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+              width={192}
+              height={192}
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </motion.div>
         </div>
-        <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-400">
-          Personal Space
-        </h1>
-        <p className="text-xl text-gray-300 max-w-lg mx-auto">
-          This is my personal page, brief intro to some of my hobbies and interests.
-        </p>
-      </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: isVisible ? 1 : 0, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-400">
+            Personal Space
+          </h1>
+          <p className="text-xl text-gray-300 max-w-lg mx-auto">
+            This is my personal page, brief intro to some of my hobbies and interests.
+          </p>
+        </motion.div>
+      </header>
 
       <div className="container mx-auto px-4">
         {/* Quote Section */}
