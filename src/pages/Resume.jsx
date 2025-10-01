@@ -23,32 +23,30 @@ const Resume = () => {
 
       {/* Header Section */}
       <header className="container mx-auto px-4 mb-12 text-center">
-        <div className="flex justify-center mb-6">
-          <motion.div
-            className="relative z-20"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-            initial={{ opacity: 1, y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <img
-              src="/pic.png"
-              alt="Andres Avelar"
-              className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-              width={192}
-              height={192}
-              loading="eager"
-              decoding="async"
-              fetchpriority="high"
-            />
-          </motion.div>
-        </div>
         <motion.div
           initial="hidden"
           animate={isVisible ? 'visible' : 'hidden'}
           variants={fadeInUp}
           transition={{ duration: 1 }}
         >
+          <div className="flex justify-center mb-6">
+            <motion.div
+              className="relative z-20"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
+              <img
+                src="/pic.png"
+                alt="Andres Avelar"
+                className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                width={160}
+                height={160}
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              />
+            </motion.div>
+          </div>
           <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-yellow-300">
             Andres Avelar
           </h1>
@@ -59,7 +57,7 @@ const Resume = () => {
           </div>
           <p className="text-gray-400 max-w-2xl mx-auto">
             I design and build data products and ML systems with a focus on
-            clarity, performance, and measurable outcomes.
+            explainability, performance, and measurable outcomes.
           </p>
         </motion.div>
       </header>
