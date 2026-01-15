@@ -26,16 +26,19 @@ const PersonalPage = () => {
             initial={{ opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <img
-              src="/pic.png"
-              alt="Andres Avelar"
-              className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-              width={192}
-              height={192}
-              loading="eager"
-              decoding="async"
-              fetchpriority="high"
-            />
+            <picture>
+              <source srcSet="/pic.webp" type="image/webp" />
+              <img
+                src="/pic.jpg"
+                alt="Andres Avelar"
+                className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                width={192}
+                height={192}
+                loading="eager"
+                decoding="sync"
+                fetchpriority="high"
+              />
+            </picture>
           </motion.div>
         </div>
         <motion.div
@@ -95,7 +98,7 @@ const PersonalPage = () => {
               </ul>
             </div>
             <PhotoCarousel
-              photos={["/running1.png", "/sunriserun.png", "/sunsetrun.png", "/sunsetrun2.png"]}
+              photos={["/running1.jpg", "/sunriserun.jpg", "/sunsetrun.jpg", "/sunsetrun2.jpg"]}
               speed={22}
               itemHeightClass="h-52 md:h-60 lg:h-64"
             />
@@ -116,7 +119,7 @@ const PersonalPage = () => {
               </ul>
             </div>
             <PhotoCarousel
-              photos={["/crab.png", "/pacman.png", "/owl.png", "/andromeda.png", "/jupiter.png", "/moon.png", "/mars.png"]}
+              photos={["/crab.jpg", "/pacman.jpg", "/owl.jpg", "/andromeda.jpg", "/jupiter.jpg", "/moon.jpg", "/mars.jpg"]}
               speed={30}
               itemWidthClass="w-80 md:w-96 lg:w-[28rem]"
               itemHeightClass="h-64 md:h-72 lg:h-80"
@@ -126,7 +129,7 @@ const PersonalPage = () => {
           {/* Rock Climbing */}
           <HobbySection id="climbing" title="Rock Climbing" emoji="🏔️ 🧗" reverse={true}>
             <PhotoCarousel
-              photos={["/climbing1.png", "/climbing2.png", "/rock.png", "/climbing3.png"]}
+              photos={["/climbing1.jpg", "/climbing2.jpg", "/rock.jpg", "/climbing3.jpg"]}
               speed={22}
               itemWidthClass="w-44 md:w-56 lg:w-64"
               itemHeightClass="h-60 md:h-64 lg:h-72"
@@ -140,32 +143,32 @@ const PersonalPage = () => {
 
           {/* Solo Travel */}
           <HobbySection id="travel" title="Solo Travel" emoji="🌎 🛫">
-            <PhotoCarousel photos={["/swiss2.png", "/tokyo1.png", "/kyotostairs.png", "/italy.png", "/fuji.png", "/osaka.png", "/kobe.png", "/thaisteak.png", "/elephant.png", "/germany.png", "/italy2.png", "/swiss.png", "/thai2.png", "/ramen.png", "/kyoto.png", "/thai1.png"]} speed={50} />
+            <PhotoCarousel photos={["/swiss2.jpg", "/tokyo1.jpg", "/kyotostairs.jpg", "/italy.jpg", "/fuji.jpg", "/osaka.jpg", "/kobe.jpg", "/thaisteak.jpg", "/elephant.jpg", "/germany.jpg", "/italy2.jpg", "/swiss.jpg", "/thai2.jpg", "/ramen.jpg", "/kyoto.jpg", "/thai1.jpg"]} speed={50} />
             <div>
               <p className="text-gray-300 mb-3">
                 Passionate about experiencing new cultures and environments.
               </p>
               <p className="text-gray-300 mb-4 text-2xl">
-                🇩🇪 🇫🇷 🇨🇭 🇦🇹 🇮🇹 🇹🇭 🇯🇵
+                🇩🇪 🇫🇷 🇨🇭 🇦🇹 🇮🇹 🇹🇭 🇯🇵 🇪🇸
               </p>
               <p className="text-gray-300 mb-3">
                 Most memorable moment: almost getting attacked by a wild boar in Kyoto, Japan.
               </p>
               <p className="text-gray-300">
-                Next up: 🇧🇷 🇨🇷 🇬🇧 🇪🇸
+                Next up?: 🇧🇷 🇨🇷 🇬🇧 
               </p>
             </div>
           </HobbySection>
 
           {/* Hiking */}
           <HobbySection id="hiking" title="Hiking" emoji="🥾 🏔️">
-            <PhotoCarousel photos={["/lizards.png", "/tangerine2.png", "/hikegroup.png", "/creek.png", "/sunsethike.png", "/7falls.png"]} speed={25} />
+            <PhotoCarousel photos={["/lizards.jpg", "/tangerine2.jpg", "/hikegroup.jpg", "/creek.jpg", "/sunsethike.jpg", "/7falls.jpg"]} speed={25} />
             <div>
               <p className="text-gray-300 mb-4">
                 Exploring Santa Barbara and Montecito mountains with breathtaking views.
               </p>
               <p className="text-gray-300 mb-4">
-                I found a secret cliff jumping spot in the mountains, gatekeeping it. Some of my favorite hikes include:
+                I found a secret cliff jumping spot in the SB mountains, gatekeeping it. Some of my favorite hikes include:
               </p>
               <ul className="list-disc list-inside text-gray-300 mb-4">
                 <li>Lizards Mouth Point – Short climb, best view of UCSB</li>
@@ -174,9 +177,6 @@ const PersonalPage = () => {
                 <li>7 Falls – Refreshing pools and waterfalls</li>
                 <li>Tangerine Falls – A bit technical but so worth it</li>
               </ul>
-              <p className="text-gray-300">
-                Hiking and being in nature keep me sane.
-              </p>
             </div>
           </HobbySection>
         </motion.section>

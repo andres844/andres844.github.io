@@ -23,30 +23,33 @@ const Resume = () => {
 
       {/* Header Section */}
       <header className="container mx-auto px-4 mb-12 text-center">
+        <div className="flex justify-center mb-6">
+          <motion.div
+            className="relative z-20"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <picture>
+              <source srcSet="/pic.webp" type="image/webp" />
+              <img
+                src="/pic.jpg"
+                alt="Andres Avelar"
+                className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                width={192}
+                height={192}
+                loading="eager"
+                decoding="sync"
+                fetchpriority="high"
+              />
+            </picture>
+          </motion.div>
+        </div>
         <motion.div
           initial="hidden"
           animate={isVisible ? 'visible' : 'hidden'}
           variants={fadeInUp}
           transition={{ duration: 1 }}
         >
-          <div className="flex justify-center mb-6">
-            <motion.div
-              className="relative z-20"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-            >
-              <img
-                src="/pic.png"
-                alt="Andres Avelar"
-                className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-                width={160}
-                height={160}
-                loading="eager"
-                decoding="async"
-                fetchpriority="high"
-              />
-            </motion.div>
-          </div>
           <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-yellow-300">
             Andres Avelar
           </h1>
@@ -156,11 +159,19 @@ const Resume = () => {
               <h3 className="text-xl font-semibold">University of California, Santa Barbara</h3>
               <div className="flex justify-between">
                 <p className="text-gray-300">Bachelor of Science, Statistics & Data Science</p>
-                <p className="text-gray-400">Expected June 2026</p>
+                <p className="text-gray-400">Expected March 2026</p>
               </div>
               <p className="text-gray-300">Bachelor of Arts, Economics</p>
               <ul className="list-disc list-inside text-gray-300 mt-2">
-                <li>Data Science Club member, California Nano Systems Institute Fellowship recipient</li>
+                <li className="pl-5 -indent-5">
+                  <span className="font-semibold text-gray-100">Relevant Coursework:</span>{''}
+                  <span className="inline-block align-top -indent-1 ">
+                   Regression Analysis, Time Series Analysis (Grad level), Stochastic Processes I & II, Statistical
+                   Machine Learning I & II, Bayesian Statistics, Data Structures & Algorithms, Game Theory,
+                   Econometrics I & II, Advanced Macro/Micro Economics
+                  </span>
+                </li>
+                <li>NeuroTech club Researcher & Treasurer, Data Science Club member, California Nano Systems Institute Fellowship recipient</li>
                 <li>Major GPA: 3.6, Deans Honors List F2023, W2023</li>
               </ul>
             </div>

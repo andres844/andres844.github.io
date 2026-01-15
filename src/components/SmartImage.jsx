@@ -18,26 +18,40 @@ const deriveWebp = (src) => {
 };
 
 /**
- * SmartImage tries to use a WEBP variant if it exists in `public/`.
- * It checks with a lightweight HEAD request and falls back to the
- * original `src` if the variant is missing. Decisions are cached.
+ * SmartImage can optionally try a WEBP variant if `preferWebp` is true.
+ * It checks with a lightweight HEAD request and falls back to `src`.
+ * Decisions are cached per original `src`.
  */
-const SmartImage = ({ src, alt = '', className = '', loading, decoding, fetchpriority, draggable, width, height, style, onLoad, onError }) => {
+const SmartImage = ({
+  src,
+  alt = '',
+  className = '',
+  loading,
+  decoding,
+  fetchpriority,
+  draggable,
+  width,
+  height,
+  style,
+  onLoad,
+  onError,
+  preferWebp = false,
+}) => {
   const [finalSrc, setFinalSrc] = useState(() => resolvedCache.get(src) || src);
 
-  const webp = useMemo(() => deriveWebp(src), [src]);
+  const webp = useMemo(() => (preferWebp ? deriveWebp(src) : null), [src, preferWebp]);
 
   useEffect(() => {
     let aborted = false;
-    const cached = resolvedCache.get(src);
+    const cached = preferWebp ? resolvedCache.get(src) : null;
     if (cached) {
       setFinalSrc(cached);
       return;
     }
-    // If no webp candidate, stick to original
-    if (!webp) {
-      resolvedCache.set(src, src);
+    // If not opting into webp or no candidate, stick to original
+    if (!preferWebp || !webp) {
       setFinalSrc(src);
+      if (preferWebp) resolvedCache.set(src, src);
       return;
     }
     // Check if the WEBP exists without downloading the whole file
@@ -73,7 +87,7 @@ const SmartImage = ({ src, alt = '', className = '', loading, decoding, fetchpri
         clearTimeout(t);
       };
     }
-  }, [src, webp]);
+  }, [src, webp, preferWebp]);
 
   return (
     <img
@@ -94,4 +108,3 @@ const SmartImage = ({ src, alt = '', className = '', loading, decoding, fetchpri
 };
 
 export default SmartImage;
-

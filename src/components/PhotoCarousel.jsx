@@ -10,8 +10,11 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
   const xRef = useRef(0);
   const widthRef = useRef(0);
   const lastTsRef = useRef(0);
-  const [paused, setPaused] = useState(false);
+  const [scrollPaused, setScrollPaused] = useState(true);
+  const [hoverPaused, setHoverPaused] = useState(false);
+  const [inView, setInView] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const isPaused = hoverPaused || scrollPaused;
 
   // Duplicate photos to ensure seamless looping
   const extendedPhotos = [...photos, ...photos];
@@ -35,11 +38,13 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
       (entries) => {
         entries.forEach((entry) => {
           if (entry.target === containerRef.current) {
-            setPaused(!entry.isIntersecting || entry.intersectionRatio < 0.6);
+            const ratio = entry.intersectionRatio || 0;
+            setScrollPaused(!entry.isIntersecting || ratio < 0.6);
+            setInView(entry.isIntersecting && ratio >= 0.2);
           }
         });
       },
-      { rootMargin: '0px', threshold: [0, 0.6, 1] }
+      { rootMargin: '0px', threshold: [0, 0.2, 0.6, 1] }
     );
     io.observe(containerRef.current);
     return () => io.disconnect();
@@ -63,11 +68,11 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
 
   // Animation loop using rAF; wraps without visual jump
   useEffect(() => {
-    if (!trackRef.current) return;
+    if (!trackRef.current || !inView) return;
 
-    // Only lightly preload a couple images to reduce initial bandwidth
+    // Only lightly preload a single image to reduce initial bandwidth
     const preload = () => {
-      const preloadCount = Math.min(2, photos.length);
+      const preloadCount = Math.min(1, photos.length);
       const subset = photos.slice(0, preloadCount);
       return Promise.race([
         Promise.all(
@@ -101,7 +106,7 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
       const step = (ts) => {
         if (!running) return;
         // Pause conditions: reduced motion, intersection below threshold, or tab hidden
-        if (reduceMotion || paused || document.hidden) {
+        if (reduceMotion || isPaused || document.hidden) {
           lastTsRef.current = ts;
           // When paused, idle for 200ms to reduce CPU
           if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
@@ -131,7 +136,7 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
       if (reqRef.current) cancelAnimationFrame(reqRef.current);
       if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
     };
-  }, [photos, speed, reduceMotion, paused]);
+  }, [photos, speed, reduceMotion, isPaused, inView]);
 
   // Re-measure track on resize (responsive widths)
   useEffect(() => {
@@ -143,8 +148,8 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
     return () => ro.disconnect();
   }, []);
 
-  const handleMouseEnter = () => setPaused(true);
-  const handleMouseLeave = () => setPaused(false);
+  const handleMouseEnter = () => setHoverPaused(true);
+  const handleMouseLeave = () => setHoverPaused(false);
 
   // Edge fades via CSS mask (with WebKit prefix)
   const maskStyle = {
@@ -172,6 +177,7 @@ const PhotoCarousel = ({ photos, speed = 20, itemHeightClass = 'h-60 md:h-72 lg:
             loading="lazy"
             decoding="async"
             fetchpriority="low"
+            preferWebp
             draggable="false"
             aria-hidden={index >= photos.length}
           />
