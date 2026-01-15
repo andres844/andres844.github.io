@@ -5,7 +5,13 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        univers: ['Univers', 'Helvetica', 'Arial', 'sans-serif'],
+        helvetica: ['Helvetica', 'Arial', 'sans-serif'],
+        sans: ['Univers', 'Helvetica', 'Arial', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }

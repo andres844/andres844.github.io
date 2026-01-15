@@ -18,7 +18,7 @@ const Resume = () => {
   }, []);
 
   return (
-    <div className="pt-20 pb-16 relative z-10">
+    <div className="pt-20 pb-16 relative z-10 font-univers">
       <AsciiWavesBackground />
 
       {/* Header Section */}
@@ -152,11 +152,11 @@ const Resume = () => {
             viewport={{ once: true }}
             className="mb-12"
           >
-            <h2 className="text-2xl font-bold mb-4 pb-2 border-b border-blue-500">Education</h2>
+            <h2 className="text-2xl font-semibold mb-4 pb-2 border-b border-blue-500">Education</h2>
           <div className="pl-2 space-y-8">
             {/* UCSB Section */}
             <div>
-              <h3 className="text-xl font-semibold">University of California, Santa Barbara</h3>
+              <h3 className="text-xl ">University of California, Santa Barbara</h3>
               <div className="flex justify-between">
                 <p className="text-gray-300">Bachelor of Science, Statistics & Data Science</p>
                 <p className="text-gray-400">Expected March 2026</p>
@@ -178,7 +178,7 @@ const Resume = () => {
 
             {/* UC San Diego Summer Extension Section */}
             <div>
-              <h3 className="text-xl font-semibold">University of California, San Diego: Summer Extension</h3>
+              <h3 className="text-xl font-univers">University of California, San Diego: Summer Extension</h3>
               <div className="flex justify-between">
                 <p className="text-gray-300">Computational Biology</p>
                 <p className="text-gray-400">June 2022</p>
