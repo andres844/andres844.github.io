@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import AmbientVoidBackground from '../components/AmbientVoidBackground';
 import CursorRipples from '../components/CursorRipples';
+import SectionAccent from '../components/SectionAccent';
 
 // Animation variants for reusability
 const fadeInUp = {
@@ -154,7 +155,7 @@ const Resume = () => {
             className="mb-12"
           >
           <h2 className="text-2xl font-semibold mb-4">Education</h2>
-          <div className="h-1 w-full bg-blue-900 rounded-full mb-6" />
+          <SectionAccent className="mb-6" />
           <div className="pl-2 space-y-8">
             {/* UCSB Section */}
             <div>
@@ -199,7 +200,7 @@ const Resume = () => {
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.35fr)_minmax(0,0.65fr)] lg:gap-16">
             <div className="lg:sticky lg:top-24 self-start space-y-4">
               <h2 className="text-2xl font-bold">Experience</h2>
-              <div className="h-1 w-full max-w-xs bg-blue-900 rounded-full" />
+              <SectionAccent className="w-full max-w-xs my-2" />
               <p className="text-gray-400 max-w-xs">
                 A timeline of roles and impact across AI, systems, and research.
               </p>
@@ -290,7 +291,7 @@ const Resume = () => {
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.35fr)_minmax(0,0.65fr)] lg:gap-16">
             <div className="lg:sticky lg:top-24 self-start space-y-4">
               <h2 className="text-2xl font-bold">Projects</h2>
-              <div className="h-1 w-full max-w-xs bg-blue-900 rounded-full" />
+              <SectionAccent className="w-full max-w-xs my-2" />
               <p className="text-gray-400 max-w-xs">
                 Selected builds across forecasting, quant research, and applied ML systems.
               </p>

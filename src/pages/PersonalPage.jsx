@@ -3,6 +3,7 @@ import { motion, useScroll } from 'framer-motion';
 import PhotoCarousel from '../components/PhotoCarousel';
 import AmbientVoidBackground from '../components/AmbientVoidBackground';
 import CursorRipples from '../components/CursorRipples';
+import SectionAccent from '../components/SectionAccent';
 
 const PersonalPage = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -82,9 +83,10 @@ const PersonalPage = () => {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-500">
+          <h2 className="text-3xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-500">
             Hobbies & Interests
           </h2>
+          <SectionAccent className="mx-auto w-72 mb-10" />
 
           {/* Running & Cycling */}
           <HobbySection id="running" title="Running & Cycling" emoji="🏃‍♂️ 🚴">

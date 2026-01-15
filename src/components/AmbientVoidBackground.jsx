@@ -35,11 +35,15 @@ const AmbientVoidBackground = () => {
   const orb2Y = useTransform(smoothY, [-0.5, 0.5], [-90, 90]);
 
   const orb1Animate = prefersReducedMotion
-    ? { opacity: 0.24 }
-    : { scale: [1, 1.1, 1], opacity: [0.2, 0.3, 0.2] };
+    ? { opacity: 0.28 }
+    : { scale: [1, 1.12, 1], opacity: [0.24, 0.36, 0.24] };
   const orb2Animate = prefersReducedMotion
-    ? { opacity: 0.18 }
-    : { scale: [1, 1.18, 1], opacity: [0.14, 0.24, 0.14] };
+    ? { opacity: 0.26 }
+    : { scale: [1, 1.26, 1], opacity: [0.2, 0.38, 0.2] };
+
+  const grainAnimate = prefersReducedMotion
+    ? { opacity: 0.05, filter: 'brightness(100%)' }
+    : { opacity: [0.045, 0.07, 0.045], filter: ['brightness(100%)', 'brightness(115%)', 'brightness(100%)'] };
 
   return (
     <div
@@ -55,7 +59,7 @@ const AmbientVoidBackground = () => {
               ? undefined
               : { duration: 10, repeat: Infinity, ease: 'easeInOut' }
           }
-          className="absolute -top-[30%] -left-[15%] h-[90vw] w-[90vw] rounded-full bg-blue-500/90 blur-[145px] mix-blend-screen"
+          className="absolute -top-[30%] -left-[15%] h-[92vw] w-[92vw] rounded-full bg-blue-500/95 blur-[135px] mix-blend-screen"
         />
         <motion.div
           style={{ x: orb2X, y: orb2Y }}
@@ -65,7 +69,7 @@ const AmbientVoidBackground = () => {
               ? undefined
               : { duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }
           }
-          className="absolute -bottom-[25%] -right-[10%] h-[82vw] w-[82vw] rounded-full bg-yellow-300/90 blur-[130px] mix-blend-screen"
+          className="absolute -bottom-[25%] -right-[10%] h-[86vw] w-[86vw] rounded-full bg-yellow-300/95 blur-[115px] mix-blend-screen"
         />
       </div>
 
@@ -77,7 +81,15 @@ const AmbientVoidBackground = () => {
         }}
       />
 
-      <div className="absolute inset-0 opacity-[0.05] mix-blend-soft-light">
+      <motion.div
+        className="absolute inset-0 mix-blend-soft-light"
+        animate={grainAnimate}
+        transition={
+          prefersReducedMotion
+            ? undefined
+            : { duration: 18, repeat: Infinity, ease: 'easeInOut' }
+        }
+      >
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
           <filter id="ambient-grain">
             <feTurbulence
@@ -89,7 +101,7 @@ const AmbientVoidBackground = () => {
           </filter>
           <rect width="100%" height="100%" filter="url(#ambient-grain)" />
         </svg>
-      </div>
+      </motion.div>
 
       <div
         className="absolute inset-0"

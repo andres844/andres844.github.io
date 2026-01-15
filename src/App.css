@@ -48,6 +48,24 @@
   }
 }
 
+@keyframes accent-sheen {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  45% {
+    opacity: 0.5;
+  }
+  60% {
+    transform: translateX(0%);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
 .cursor-ripples {
   position: fixed;
   inset: 0;
@@ -60,13 +78,13 @@
   border-radius: 9999px;
   background: radial-gradient(
     circle,
-    rgba(30, 58, 138, 0.28) 0%,
-    rgba(30, 64, 175, 0.14) 38%,
-    rgba(15, 23, 42, 0.08) 58%,
-    rgba(30, 64, 175, 0) 78%
+    rgba(30, 58, 138, 0.42) 0%,
+    rgba(37, 99, 235, 0.22) 38%,
+    rgba(14, 116, 144, 0.14) 60%,
+    rgba(37, 99, 235, 0) 78%
   );
   border: 0;
-  box-shadow: 0 0 14px rgba(30, 58, 138, 0.18), inset 0 0 8px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 0 22px rgba(37, 99, 235, 0.28), inset 0 0 10px rgba(14, 116, 144, 0.2);
   mix-blend-mode: screen;
   animation: ripple-expand 1s ease-out forwards;
 }
@@ -83,4 +101,39 @@
   height: 120px;
   animation-duration: 0.9s;
   opacity: 0.45;
+}
+
+.section-accent {
+  position: relative;
+  height: 4px;
+  width: 100%;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.section-accent__base {
+  position: absolute;
+  inset: 0;
+  background: #1e3a8a;
+}
+
+.section-accent__sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59, 130, 246, 0.55),
+    rgba(56, 189, 248, 0.35),
+    rgba(59, 130, 246, 0.55),
+    transparent
+  );
+  mix-blend-mode: screen;
+  animation: accent-sheen 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-accent__sheen {
+    animation: none;
+  }
 }
