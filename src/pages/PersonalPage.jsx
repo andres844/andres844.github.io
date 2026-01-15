@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll } from 'framer-motion';
 import PhotoCarousel from '../components/PhotoCarousel';
-import AsciiWavesBackground from '../components/AsciiWavesBackground';
+import AmbientVoidBackground from '../components/AmbientVoidBackground';
+import CursorRipples from '../components/CursorRipples';
 
 const PersonalPage = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -12,9 +13,11 @@ const PersonalPage = () => {
   }, []);
 
   return (
-    <div className="pt-20 pb-16 relative inset-0 z-10">
-      {/* Keep ASCII behind all content on this page */}
-      <AsciiWavesBackground opacity={0.06} speed={0.1} period={18} zIndex={0} />
+    <div className="relative bg-[#040a16] text-white cursor-crosshair">
+      <AmbientVoidBackground />
+      <CursorRipples />
+
+      <div className="relative z-10 pt-20 pb-16">
 
       {/* Header */}
       <header className="container mx-auto px-4 mb-12 text-center">
@@ -31,7 +34,7 @@ const PersonalPage = () => {
               <img
                 src="/pic.jpg"
                 alt="Andres Avelar"
-                className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                className="w-48 h-48 rounded-full object-cover border-4 border-blue-900 shadow-lg"
                 width={192}
                 height={192}
                 loading="eager"
@@ -191,6 +194,7 @@ const PersonalPage = () => {
       >
         ↑
       </motion.button>
+      </div>
     </div>
   );
 };
@@ -199,7 +203,7 @@ const PersonalPage = () => {
 const HobbySection = ({ id, title, children, emoji = "", reverse = false }) => (
   <div 
     id={id}
-    className="mb-12 bg-gray-800 border border-white/10 p-8 rounded-lg shadow-xl transition-all"
+    className="mb-12 glass-card hover-change p-8 rounded-lg shadow-xl transition-all"
   >
     <h3 className="text-2xl font-bold mb-2">
       {title} {emoji}

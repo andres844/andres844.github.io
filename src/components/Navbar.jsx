@@ -32,7 +32,7 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center px-4">
         <Link 
           to="/" 
-          className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-yellow-300"
+          className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-blue-200"
         >
           Andres Avelar
         </Link>

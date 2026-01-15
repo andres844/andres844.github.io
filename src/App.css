@@ -9,18 +9,18 @@
 
 /* Glassmorphism Card */
 .glass-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  backdrop-filter: blur(12px) saturate(120%);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   border-radius: 0.75rem; /* rounded-lg */
   transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .glass-card.hover-change:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Subtle ASCII waves background (canvas) */
@@ -35,4 +35,52 @@
   /* fade near top/bottom for subtlety */
   -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
   mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+}
+
+@keyframes ripple-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 0;
+  }
+}
+
+.cursor-ripples {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.cursor-ripple {
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(30, 58, 138, 0.28) 0%,
+    rgba(30, 64, 175, 0.14) 38%,
+    rgba(15, 23, 42, 0.08) 58%,
+    rgba(30, 64, 175, 0) 78%
+  );
+  border: 0;
+  box-shadow: 0 0 14px rgba(30, 58, 138, 0.18), inset 0 0 8px rgba(15, 23, 42, 0.14);
+  mix-blend-mode: screen;
+  animation: ripple-expand 1s ease-out forwards;
+}
+
+.cursor-ripple--click {
+  width: 220px;
+  height: 220px;
+  animation-duration: 1.2s;
+  opacity: 0.75;
+}
+
+.cursor-ripple--move {
+  width: 120px;
+  height: 120px;
+  animation-duration: 0.9s;
+  opacity: 0.45;
 }

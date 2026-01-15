@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import TiltCard from '../components/TiltCard';
-import AsciiWavesBackground from '../components/AsciiWavesBackground';
+import AmbientVoidBackground from '../components/AmbientVoidBackground';
+import CursorRipples from '../components/CursorRipples';
 
 // Animation variants for reusability
 const fadeInUp = {
@@ -11,21 +11,22 @@ const fadeInUp = {
 
 const Resume = () => {
   const [isVisible, setIsVisible] = useState(false);
-
   // Trigger entry animations on mount
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
   return (
-    <div className="pt-20 pb-16 relative z-10 font-univers">
-      <AsciiWavesBackground />
+    <div className="relative bg-[#040a16] text-white font-univers cursor-crosshair">
+      <AmbientVoidBackground />
+      <CursorRipples />
 
+      <div className="relative z-10 pt-20 pb-16">
       {/* Header Section */}
       <header className="container mx-auto px-4 mb-12 text-center">
         <div className="flex justify-center mb-6">
           <motion.div
-            className="relative z-20"
+            className="relative z-20 rounded-full border-4 border-blue-900 shadow-lg"
             whileHover={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 300 }}
           >
@@ -34,7 +35,7 @@ const Resume = () => {
               <img
                 src="/pic.jpg"
                 alt="Andres Avelar"
-                className="w-48 h-48 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                className="w-48 h-48 rounded-full object-cover"
                 width={192}
                 height={192}
                 loading="eager"
@@ -50,7 +51,7 @@ const Resume = () => {
           variants={fadeInUp}
           transition={{ duration: 1 }}
         >
-          <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-yellow-300">
+          <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-400">
             Andres Avelar
           </h1>
           <div className="flex flex-col md:flex-row justify-center items-center gap-3 mb-4">
@@ -152,7 +153,8 @@ const Resume = () => {
             viewport={{ once: true }}
             className="mb-12"
           >
-            <h2 className="text-2xl font-semibold mb-4 pb-2 border-b border-blue-500">Education</h2>
+          <h2 className="text-2xl font-semibold mb-4">Education</h2>
+          <div className="h-1 w-full bg-blue-900 rounded-full mb-6" />
           <div className="pl-2 space-y-8">
             {/* UCSB Section */}
             <div>
@@ -193,174 +195,162 @@ const Resume = () => {
 
 
         {/* Experience Section */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-          className="mb-12"
-        >
-          <h2 className="text-2xl font-bold mb-4 pb-2 border-b border-blue-500">Experience</h2>
-
-          {/* Experience Card Template */}
-          {[
-            {
-              title: 'AI Engineer - BNY Mellon',
-              dates: 'June 2026 - August 2026',
-              location: 'Pittsburgh, PA',
-              points: [
-                'Multi Agent LLM-as-a-Judge pipeline for Quantitative Cyber Risk Team: Automated risk assessment of complete CRIv2.1 and MITRE ATT&CK Frameworks with respect to Global BNY business units.',
-                'Saved 270+ hours of manual labor by leveraging fine-tuned locally hosted LLMs',
-                'Utilized Parallel Processing and Advanced Prompt Engineering to optimize agent workflows and reduce latency by 85%'
-
-              ],
-              delay: 0,
-            },
-            {
-              title: 'President - BlockchainUCSB',
-              dates: 'June 2024 - Current',
-              location: 'Santa Barbara, CA',
-              points: [
-                'Led Blockchain Summit (100+ attendees, $10K+ sponsorship) boosting community and funding.',
-                'Organized weekly blockchain lectures for 200+ STEM students. (Intro to Chainlink, Solidity, & DeFi)',
-                'Built industry and inter-club ties via domestic/international conferences; secured 4 sponsors.',
-                'Analyzed DEX vs. CEX risks using Artemis data & DeFi principles under Prof. Malkhi.',
-                'Assisted in joint research with Computer Science and Economics Departments; optimized ordering algorithims for Automated Market Makers.',
-              ],
-              delay: 0.1,
-            },
-            {
-              title: 'Machine Learning Engineer - 2430 Group',
-              dates: 'June 2024 - December 2024',
-              location: 'Santa Barbara, CA',
-              points: [
-                'Developed a pipeline using RegEx & open-source LLMs (FuseChat-7b, e5-Mistral) to parse 9M+ data points; optimized vector embeddings.',
-                'Led a 5-member team to build a custom machine learning (Random Forest, XGBoost) and RAG pipeline to derive proprietary risk of IP theft formula.',
-                'Engineered the Glean AI app (Google Drive API, Postman) to streamline research and cut processing time by 20%.',
-                'Fine-tuned YOLOv8 via Roboflow, reaching 94% test accuracy.',
-              ],
-              delay: 0.2,
-            },
-            {
-              title: 'Systems Operator - UCSB Information Technology',
-              dates: 'September 2023 - April 2025',
-              location: 'Santa Barbara, CA',
-              points: [
-                'Deployed/imaged ~2,500 computers for 35K users; configured BIOS and mitigated tech risks.',
-                'Automated class software installs/updates (Deep Freeze, PDQ) to boost efficiency by 30%.',
-                'Scripted Python tools for Airtable inventory updates.',
-              ],
-              delay: 0.2,
-            },
-            {
-              title: 'Software Engineer - APTCO',
-              dates: 'July 2023 - September 2023',
-              location: 'McFarland, CA',
-              points: [
-                'Built a full-stack ASP.NET app with senior engineers, reducing data entry by 45%.',
-                'Trained Spanish-speaking users and enhanced accessibility, driving 87K+ entries by EOY.',
-                'Developed an industrial connectivity solution using .NET MAUI with an MSSQL backend.',
-                'Integrated a PLC with Aveva Edge, displaying 1K+ daily data points to boost QC efficiency by ~30%.',
-              ],
-              delay: 0.3,
-            },
-          ].map((job, index) => (
-            <div className="mb-8" key={index}>
-              {/* Sticky header for this job; stays above its own block */}
-              <div className="sticky top-24 z-20 mb-1">
-                <div className="glass-card px-6 py-2 rounded-lg w-full flex items-center justify-between">
-                  <h3 className="text-base md:text-lg font-semibold text-gray-100">{job.title}</h3>
-                  <p className="text-gray-200 text-sm md:text-base">{job.dates}</p>
-                </div>
-              </div>
-              <TiltCard>
-                <motion.div
-                  initial="hidden"
-                  whileInView="visible"
-                  variants={fadeInUp}
-                  transition={{ duration: 0.6, delay: job.delay }}
-                  viewport={{ once: true }}
+        <section className="mb-16 lg:mb-24">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.35fr)_minmax(0,0.65fr)] lg:gap-16">
+            <div className="lg:sticky lg:top-24 self-start space-y-4">
+              <h2 className="text-2xl font-bold">Experience</h2>
+              <div className="h-1 w-full max-w-xs bg-blue-900 rounded-full" />
+              <p className="text-gray-400 max-w-xs">
+                A timeline of roles and impact across AI, systems, and research.
+              </p>
+            </div>
+            <div className="space-y-8">
+              {[
+                {
+                  title: 'AI Engineer - BNY Mellon',
+                  dates: 'June 2026 - August 2026',
+                  location: 'Pittsburgh, PA',
+                  points: [
+                    'Multi Agent LLM-as-a-Judge pipeline for Quantitative Cyber Risk Team: Automated risk assessment of complete CRIv2.1 and MITRE ATT&CK Frameworks with respect to Global BNY business units.',
+                    'Saved 270+ hours of manual labor by leveraging fine-tuned locally hosted LLMs',
+                    'Utilized Parallel Processing and Advanced Prompt Engineering to optimize agent workflows and reduce latency by 85%',
+                  ],
+                },
+                {
+                  title: 'President - BlockchainUCSB',
+                  dates: 'June 2024 - Current',
+                  location: 'Santa Barbara, CA',
+                  points: [
+                    'Led Blockchain Summit (100+ attendees, $10K+ sponsorship) boosting community and funding.',
+                    'Organized weekly blockchain lectures for 200+ STEM students. (Intro to Chainlink, Solidity, & DeFi)',
+                    'Built industry and inter-club ties via domestic/international conferences; secured 4 sponsors.',
+                    'Analyzed DEX vs. CEX risks using Artemis data & DeFi principles under Prof. Malkhi.',
+                    'Assisted in joint research with Computer Science and Economics Departments; optimized ordering algorithims for Automated Market Makers.',
+                  ],
+                },
+                {
+                  title: 'Machine Learning Engineer - 2430 Group',
+                  dates: 'June 2024 - December 2024',
+                  location: 'Santa Barbara, CA',
+                  points: [
+                    'Developed a pipeline using RegEx & open-source LLMs (FuseChat-7b, e5-Mistral) to parse 9M+ data points; optimized vector embeddings.',
+                    'Led a 5-member team to build a custom machine learning (Random Forest, XGBoost) and RAG pipeline to derive proprietary risk of IP theft formula.',
+                    'Engineered the Glean AI app (Google Drive API, Postman) to streamline research and cut processing time by 20%.',
+                    'Fine-tuned YOLOv8 via Roboflow, reaching 94% test accuracy.',
+                  ],
+                },
+                {
+                  title: 'Systems Operator - UCSB Information Technology',
+                  dates: 'September 2023 - April 2025',
+                  location: 'Santa Barbara, CA',
+                  points: [
+                    'Deployed/imaged ~2,500 computers for 35K users; configured BIOS and mitigated tech risks.',
+                    'Automated class software installs/updates (Deep Freeze, PDQ) to boost efficiency by 30%.',
+                    'Scripted Python tools for Airtable inventory updates.',
+                  ],
+                },
+                {
+                  title: 'Software Engineer - APTCO',
+                  dates: 'July 2023 - September 2023',
+                  location: 'McFarland, CA',
+                  points: [
+                    'Built a full-stack ASP.NET app with senior engineers, reducing data entry by 45%.',
+                    'Trained Spanish-speaking users and enhanced accessibility, driving 87K+ entries by EOY.',
+                    'Developed an industrial connectivity solution using .NET MAUI with an MSSQL backend.',
+                    'Integrated a PLC with Aveva Edge, displaying 1K+ daily data points to boost QC efficiency by ~30%.',
+                  ],
+                },
+              ].map((job, index) => (
+                <motion.article
+                  key={index}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  className="glass-card hover-change p-6 rounded-2xl"
                 >
-                  <p className="text-gray-400 mb-2">{job.location}</p>
-                  <ul className="list-disc list-inside text-gray-300">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <h3 className="text-lg md:text-xl font-semibold text-gray-100">{job.title}</h3>
+                    <p className="text-sm md:text-base text-gray-400">{job.dates}</p>
+                  </div>
+                  <p className="text-gray-400 mt-1">{job.location}</p>
+                  <ul className="list-disc list-inside text-gray-300 mt-4 space-y-2">
                     {job.points.map((point, i) => (
                       <li key={i}>{point}</li>
                     ))}
                   </ul>
-                </motion.div>
-              </TiltCard>
+                </motion.article>
+              ))}
             </div>
-          ))}
-        </motion.section>
+          </div>
+        </section>
 
         {/* Projects Section */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          variants={fadeInUp}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-          className="mb-12"
-        >
-          <h2 className="text-2xl font-bold mb-4 pb-2 border-b border-blue-500">Projects</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              {
-                title: 'Time Series Forecasting',
-                description: 'Extensively analyzed and forecasted weather time-series data using ARIMA and SARIMA models, leveraging R (including the forecast package for automatic ARIMA and state-space exponential smoothing) for model selection and diagnostics (ACF/PACF, stationarity tests), and presented insights through custom visualizations',
-                tags: ['R Studio', 'ggplot2', 'auto.arima'],
-                delay: 0,
-              },
-              {
-                title: 'Quantitative Backtesting Framework',
-                description: 'Implemented Monte Carlo simulation-driven backtesting with 10,000 step walk-forward optimization, leveraging Python, statistical resampling (e.g., bootstrapping/permutation testing), dynamic risk-adjusted performance metrics, and visualizations to evaluate strategy robustness across multiple market regimes.',
-                tags: ['Scikit Learn', 'Random Forest', 'Donchian Breakout Strategy'],
-                delay: 0.1,
-              },
-              {
-                title: 'Volatility Surface Visualization',
-                description:
-                  'Derived formula to visualize volatility smile/skew of options contracts using Black–Scholes modeling, implied volatility extraction, and 3D surface plotting (Python/Matplotlib/NumPy) to assess bias of given stock',
-                tags: ['Polygon.io API', 'Matplotlib', 'SeaBorn'],
-                delay: 0.1,
-              },
-              {
-                title: 'AI Research Assistant',
-                description: 'Built a RAG-powered research assistant using LangChain and OpenAI API',
-                tags: ['Python', 'LangChain', 'OpenAI API'],
-                delay: 0,
-              },
-              {
-                title: 'Neural Network from scratch',
-                description:
-                  'Coded feedforward neural network in base Python to identify MNIST dataset, strengthening my theoretical knowledge',
-                delay: 0.1,
-              },
-            ].map((project, index) => (
-              <motion.div
-                key={index}
-                initial="hidden"
-                whileInView="visible"
-                variants={fadeInUp}
-                transition={{ duration: 0.6, delay: project.delay }}
-                viewport={{ once: true }}
-                className="glass-card hover-change p-6 rounded-lg transition-all duration-300"
-              >
-                <h3 className="text-xl font-bold mb-2">{project.title}</h3>
-                <p className="text-gray-300 mb-2">{project.description}</p>
-                {project.tags && project.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {project.tags.map((tag, i) => (
-                      <span key={i} className="bg-yellow-300 text-black px-2 py-1 rounded text-sm">
-                        {tag}
-                      </span>
-                    ))}
+        <section className="mb-12">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.35fr)_minmax(0,0.65fr)] lg:gap-16">
+            <div className="lg:sticky lg:top-24 self-start space-y-4">
+              <h2 className="text-2xl font-bold">Projects</h2>
+              <div className="h-1 w-full max-w-xs bg-blue-900 rounded-full" />
+              <p className="text-gray-400 max-w-xs">
+                Selected builds across forecasting, quant research, and applied ML systems.
+              </p>
+            </div>
+            <div className="space-y-6">
+              {[
+                {
+                  title: 'Time Series Forecasting',
+                  description: 'Extensively analyzed and forecasted weather time-series data using ARIMA and SARIMA models, leveraging R (including the forecast package for automatic ARIMA and state-space exponential smoothing) for model selection and diagnostics (ACF/PACF, stationarity tests), and presented insights through custom visualizations',
+                  tags: ['R Studio', 'ggplot2', 'auto.arima'],
+                },
+                {
+                  title: 'Quantitative Backtesting Framework',
+                  description: 'Implemented Monte Carlo simulation-driven backtesting with 10,000 step walk-forward optimization, leveraging Python, statistical resampling (e.g., bootstrapping/permutation testing), dynamic risk-adjusted performance metrics, and visualizations to evaluate strategy robustness across multiple market regimes.',
+                  tags: ['Scikit Learn', 'Random Forest', 'Donchian Breakout Strategy'],
+                },
+                {
+                  title: 'Volatility Surface Visualization',
+                  description:
+                    'Derived formula to visualize volatility smile/skew of options contracts using Black–Scholes modeling, implied volatility extraction, and 3D surface plotting (Python/Matplotlib/NumPy) to assess bias of given stock',
+                  tags: ['Polygon.io API', 'Matplotlib', 'SeaBorn'],
+                },
+                {
+                  title: 'AI Research Assistant',
+                  description: 'Built a RAG-powered research assistant using LangChain and OpenAI API',
+                  tags: ['Python', 'LangChain', 'OpenAI API'],
+                },
+                {
+                  title: 'Neural Network from scratch',
+                  description:
+                    'Coded feedforward neural network in base Python to identify MNIST dataset, strengthening my theoretical knowledge',
+                  tags: [],
+                },
+              ].map((project, index) => (
+                <motion.article
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  className="glass-card hover-change p-6 rounded-2xl transition-colors"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <h3 className="text-xl font-bold text-gray-100">{project.title}</h3>
                   </div>
-                )}
-              </motion.div>
-            ))}
+                  <p className="text-gray-300 mb-4">{project.description}</p>
+                  {project.tags && project.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {project.tags.map((tag, i) => (
+                        <span key={i} className="bg-yellow-300/90 text-black px-2 py-1 rounded text-sm">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </motion.article>
+              ))}
+            </div>
           </div>
-        </motion.section>
+        </section>
 
         </section>
       </main>
@@ -379,6 +369,7 @@ const Resume = () => {
       <footer className="py-6 text-center text-gray-500">
         <p>© {new Date().getFullYear()} Andres Avelar</p>
       </footer>
+      </div>
     </div>
   );
 };
