@@ -5,7 +5,7 @@ import CursorRipples from '../components/CursorRipples';
 import SectionAccent from '../components/SectionAccent';
 
 const TinyRunner = () => {
-  const arenaHeight = 220;
+  const arenaHeight = 200;
   const groundOffset = 30;
   const playerSize = 26;
   const playerX = 52;
@@ -210,7 +210,7 @@ const TinyRunner = () => {
       <button
         type="button"
         onClick={handleAction}
-        className="relative h-[220px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(30,58,138,0.18),rgba(15,23,42,0.1))] text-left"
+        className="relative h-[200px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(30,58,138,0.18),rgba(15,23,42,0.1))] text-left"
         aria-label="Tiny runner arena"
       >
         <div className="absolute inset-0 pointer-events-none">
@@ -319,12 +319,12 @@ const ReactionPulse = () => {
       <button
         type="button"
         onClick={handleClick}
-        className={`w-full rounded-2xl border border-white/10 px-6 py-8 text-center transition-colors ${
+        className={`w-full rounded-2xl border border-white/10 px-6 py-6 text-center transition-colors ${
           phase === 'ready' ? 'bg-blue-500/20 text-white' : 'bg-white/5 text-zinc-200'
         }`}
       >
         <div className="text-sm uppercase tracking-[0.35em] text-blue-200">Reaction Pulse</div>
-        <div className="mt-3 text-3xl font-semibold">{message}</div>
+        <div className="mt-2 text-2xl font-semibold">{message}</div>
         {reaction !== null && (
           <div className="mt-2 text-sm text-zinc-300">Last: {reaction} ms</div>
         )}
@@ -390,7 +390,7 @@ const AimTrainer = () => {
       </div>
       <div
         ref={arenaRef}
-        className="relative h-56 w-full rounded-2xl border border-white/10 bg-white/5"
+        className="relative h-44 w-full rounded-2xl border border-white/10 bg-white/5"
       >
         {running ? (
           <button
@@ -478,7 +478,7 @@ const PulseGrid = () => {
               setScore((prev) => prev + 1);
               setActive(Math.floor(Math.random() * 9));
             }}
-            className={`h-20 rounded-2xl border border-white/10 transition-colors ${
+            className={`h-16 rounded-2xl border border-white/10 transition-colors ${
               active === index
                 ? 'bg-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.35)]'
                 : 'bg-white/5'
@@ -504,7 +504,7 @@ const GameCard = ({ title, description, children }) => (
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6, ease: 'easeOut' }}
     viewport={{ once: true, amount: 0.3 }}
-    className="glass-card hover-change p-6 rounded-2xl space-y-5"
+    className="glass-card hover-change p-5 rounded-2xl space-y-4"
   >
     <div>
       <h3 className="text-xl font-semibold text-white">{title}</h3>
@@ -520,8 +520,8 @@ const GamesPage = () => {
       <AmbientVoidBackground />
       <CursorRipples />
 
-      <div className="relative z-10 pt-24 pb-16">
-        <header className="container mx-auto px-4 text-center mb-16">
+      <div className="relative z-10 pt-16 pb-12">
+        <header className="container mx-auto px-4 text-center mb-10">
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -533,16 +533,16 @@ const GamesPage = () => {
           <p className="text-zinc-400 mt-4 max-w-2xl mx-auto">
             A tiny playground of quick challenges. No purpose.
           </p>
-          <SectionAccent className="mx-auto w-56 mt-8" />
+          <SectionAccent className="mx-auto w-56 mt-6" />
         </header>
 
-        <section className="container mx-auto px-4 space-y-10">
+        <section className="container mx-auto px-4 space-y-6">
           <motion.article
             initial={{ opacity: 0, y: 18 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
             viewport={{ once: true, amount: 0.3 }}
-            className="glass-card hover-change p-8 rounded-3xl"
+            className="glass-card hover-change p-6 rounded-3xl"
           >
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
