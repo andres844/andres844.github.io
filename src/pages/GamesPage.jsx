@@ -149,12 +149,16 @@ const TinyRunner = () => {
       const playerBottom = player.y + playerSize;
 
       const hit = obstaclesRef.current.some((obstacle) => {
-        const obstacleLeft = obstacle.x;
-        const obstacleRight = obstacle.x + obstacle.width;
+        const insetX =
+          obstacle.type === 'spike' ? obstacle.width * 0.2 : obstacle.width * 0.08;
+        const insetY =
+          obstacle.type === 'spike' ? obstacle.height * 0.2 : obstacle.height * 0.1;
+        const obstacleLeft = obstacle.x + insetX;
+        const obstacleRight = obstacle.x + obstacle.width - insetX;
         const obstacleTop =
           obstacle.type === 'spike'
-            ? groundTop - obstacle.height + 2
-            : groundTop - obstacle.height;
+            ? groundTop - obstacle.height + insetY
+            : groundTop - obstacle.height + insetY;
         const obstacleBottom = groundTop;
         return (
           playerRight > obstacleLeft &&
