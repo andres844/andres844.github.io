@@ -51,6 +51,13 @@ const Navbar = () => {
           >
             Personal
           </Link>
+
+          <Link
+            to="/games"
+            className={`${location.pathname === '/games' ? activeClasses : inactiveClasses}`}
+          >
+            Games
+          </Link>
         </div>
       </div>
     </motion.nav>
