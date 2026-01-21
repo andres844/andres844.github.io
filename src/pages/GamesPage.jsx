@@ -1,8 +1,342 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import AmbientVoidBackground from '../components/AmbientVoidBackground';
 import CursorRipples from '../components/CursorRipples';
 import SectionAccent from '../components/SectionAccent';
+
+const BLOCK_GRID_SIZE = 8;
+const BLOCK_COLORS = [
+  'bb-block--blue',
+  'bb-block--violet',
+  'bb-block--emerald',
+  'bb-block--amber',
+];
+
+const createShape = (id, cells) => {
+  const width = Math.max(...cells.map(([x]) => x)) + 1;
+  const height = Math.max(...cells.map(([, y]) => y)) + 1;
+  return { id, cells, width, height };
+};
+
+const SHAPES = {
+  easy: [
+    createShape('dot', [[0, 0]]),
+    createShape('line-2-h', [
+      [0, 0],
+      [1, 0],
+    ]),
+    createShape('line-2-v', [
+      [0, 0],
+      [0, 1],
+    ]),
+    createShape('line-3-h', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+    ]),
+    createShape('line-3-v', [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+    ]),
+    createShape('line-4-h', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+    ]),
+    createShape('line-4-v', [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [0, 3],
+    ]),
+    createShape('square-2', [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1],
+    ]),
+  ],
+  medium: [
+    createShape('corner-a', [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+    ]),
+    createShape('corner-b', [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+    ]),
+    createShape('corner-c', [
+      [0, 0],
+      [0, 1],
+      [1, 1],
+    ]),
+    createShape('corner-d', [
+      [1, 0],
+      [0, 1],
+      [1, 1],
+    ]),
+    createShape('l-4-a', [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [1, 2],
+    ]),
+    createShape('l-4-b', [
+      [1, 0],
+      [1, 1],
+      [1, 2],
+      [0, 2],
+    ]),
+    createShape('l-4-c', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [0, 1],
+    ]),
+    createShape('l-4-d', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [2, 1],
+    ]),
+    createShape('rect-2x4-h', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [3, 1],
+    ]),
+    createShape('rect-2x4-v', [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1],
+      [0, 2],
+      [1, 2],
+      [0, 3],
+      [1, 3],
+    ]),
+    createShape('rect-2x3-h', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+    ]),
+    createShape('rect-2x3-v', [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1],
+      [0, 2],
+      [1, 2],
+    ]),
+  ],
+  hard: [
+    createShape('zig-a', [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+      [2, 1],
+    ]),
+    createShape('zig-b', [
+      [1, 0],
+      [2, 0],
+      [0, 1],
+      [1, 1],
+    ]),
+    createShape('tee', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [1, 1],
+    ]),
+    createShape('line-5-h', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [4, 0],
+    ]),
+    createShape('line-5-v', [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [0, 4],
+    ]),
+    createShape('big-square', [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [0, 2],
+      [1, 2],
+      [2, 2],
+    ]),
+    createShape('big-l', [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [1, 2],
+      [2, 2],
+    ]),
+  ],
+};
+
+const rollTier = () => {
+  const roll = Math.random();
+  if (roll < 0.5) return 'easy';
+  if (roll < 0.65) return 'medium';
+  return 'hard';
+};
+
+const rollPiece = () => {
+  const tier = rollTier();
+  const shapes = SHAPES[tier];
+  const shape = shapes[Math.floor(Math.random() * shapes.length)];
+  const color = BLOCK_COLORS[Math.floor(Math.random() * BLOCK_COLORS.length)];
+  return {
+    key: `${tier}-${shape.id}-${Math.random().toString(36).slice(2, 8)}`,
+    cells: shape.cells,
+    width: shape.width,
+    height: shape.height,
+    color,
+  };
+};
+
+const createEmptyGrid = () =>
+  Array.from({ length: BLOCK_GRID_SIZE }, () => Array(BLOCK_GRID_SIZE).fill(null));
+
+const canPlacePiece = (grid, piece, row, col) =>
+  piece.cells.every(([x, y]) => {
+    const targetRow = row + y;
+    const targetCol = col + x;
+    if (
+      targetRow < 0 ||
+      targetRow >= BLOCK_GRID_SIZE ||
+      targetCol < 0 ||
+      targetCol >= BLOCK_GRID_SIZE
+    ) {
+      return false;
+    }
+    return !grid[targetRow][targetCol];
+  });
+
+const placePiece = (grid, piece, row, col) => {
+  const next = grid.map((line) => line.slice());
+  piece.cells.forEach(([x, y]) => {
+    next[row + y][col + x] = piece.color;
+  });
+  return next;
+};
+
+const clearLines = (grid) => {
+  const rowsToClear = [];
+  const colsToClear = [];
+  for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+    if (grid[row].every(Boolean)) rowsToClear.push(row);
+  }
+  for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+    let full = true;
+    for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+      if (!grid[row][col]) {
+        full = false;
+        break;
+      }
+    }
+    if (full) colsToClear.push(col);
+  }
+  if (!rowsToClear.length && !colsToClear.length) {
+    return { grid, linesCleared: 0 };
+  }
+  const next = grid.map((line) => line.slice());
+  rowsToClear.forEach((row) => {
+    for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+      next[row][col] = null;
+    }
+  });
+  colsToClear.forEach((col) => {
+    for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+      next[row][col] = null;
+    }
+  });
+  return { grid: next, linesCleared: rowsToClear.length + colsToClear.length };
+};
+
+const hasMove = (grid, pieces) =>
+  pieces.some((piece) => {
+    if (!piece) return false;
+    for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+      for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+        if (canPlacePiece(grid, piece, row, col)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  });
+
+const pickAnchorCell = (piece, offsetX, offsetY, cellSize) => {
+  if (!piece.cells.length) {
+    return {
+      anchor: { x: 0, y: 0 },
+      offset: { x: 0, y: 0 },
+    };
+  }
+
+  let bestCell = piece.cells[0];
+  let bestDist = Number.POSITIVE_INFINITY;
+  piece.cells.forEach(([x, y]) => {
+    const centerX = (x + 0.5) * cellSize;
+    const centerY = (y + 0.5) * cellSize;
+    const dx = centerX - offsetX;
+    const dy = centerY - offsetY;
+    const dist = dx * dx + dy * dy;
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestCell = [x, y];
+    }
+  });
+
+  return {
+    anchor: { x: bestCell[0], y: bestCell[1] },
+    offset: {
+      x: (bestCell[0] + 0.5) * cellSize,
+      y: (bestCell[1] + 0.5) * cellSize,
+    },
+  };
+};
+
+const getPlacementFromPointer = (board, dragData, clientX, clientY) => {
+  if (!board || !dragData) return null;
+  const rect = board.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return null;
+  if (
+    clientX < rect.left ||
+    clientX >= rect.right ||
+    clientY < rect.top ||
+    clientY >= rect.bottom
+  ) {
+    return null;
+  }
+  const cellSize = rect.width / BLOCK_GRID_SIZE;
+  const rawCol = Math.floor((clientX - rect.left + cellSize / 2) / cellSize);
+  const rawRow = Math.floor((clientY - rect.top + cellSize / 2) / cellSize);
+  const col = Math.min(Math.max(rawCol, 0), BLOCK_GRID_SIZE - 1);
+  const row = Math.min(Math.max(rawRow, 0), BLOCK_GRID_SIZE - 1);
+  return { row: row - dragData.anchor.y, col: col - dragData.anchor.x };
+};
 
 const TinyRunner = () => {
   const arenaHeight = 200;
@@ -267,6 +601,289 @@ const TinyRunner = () => {
           </div>
         )}
       </button>
+    </div>
+  );
+};
+
+const BlockBlast = () => {
+  const boardRef = useRef(null);
+  const [grid, setGrid] = useState(createEmptyGrid);
+  const [pieces, setPieces] = useState(() => [rollPiece(), rollPiece(), rollPiece()]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [hoverCell, setHoverCell] = useState(null);
+  const [dragging, setDragging] = useState(null);
+  const [dragPosition, setDragPosition] = useState(null);
+  const [score, setScore] = useState(0);
+  const [best, setBest] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const scoreRef = useRef(0);
+
+  const activeIndex = dragging ? dragging.index : selectedIndex;
+  const activePiece = activeIndex !== null ? pieces[activeIndex] : null;
+
+  useEffect(() => {
+    if (selectedIndex !== null && pieces[selectedIndex]) return;
+    const nextIndex = pieces.findIndex(Boolean);
+    setSelectedIndex(nextIndex === -1 ? null : nextIndex);
+  }, [pieces, selectedIndex]);
+
+  const previewCells = useMemo(() => {
+    if (!dragging || !activePiece || !hoverCell || gameOver) return null;
+    if (!canPlacePiece(grid, activePiece, hoverCell.row, hoverCell.col)) return null;
+    return new Set(
+      activePiece.cells.map(
+        ([x, y]) => `${hoverCell.row + y}-${hoverCell.col + x}`
+      )
+    );
+  }, [activePiece, dragging, hoverCell, grid, gameOver]);
+
+  const commitPlacement = useCallback(
+    (pieceIndex, row, col) => {
+      const piece = pieces[pieceIndex];
+      if (!piece || gameOver) return false;
+      if (!canPlacePiece(grid, piece, row, col)) return false;
+
+      const placed = placePiece(grid, piece, row, col);
+      const { grid: cleared, linesCleared } = clearLines(placed);
+      const gained = piece.cells.length + linesCleared * BLOCK_GRID_SIZE;
+      const nextScore = scoreRef.current + gained;
+      scoreRef.current = nextScore;
+      setScore(nextScore);
+
+      let nextPieces = pieces.map((item, index) =>
+        index === pieceIndex ? null : item
+      );
+      if (nextPieces.every((item) => !item)) {
+        nextPieces = [rollPiece(), rollPiece(), rollPiece()];
+      }
+
+      setGrid(cleared);
+      setPieces(nextPieces);
+      setHoverCell(null);
+
+      if (!hasMove(cleared, nextPieces)) {
+        setGameOver(true);
+        setBest((prev) => Math.max(prev, nextScore));
+      }
+
+      return true;
+    },
+    [gameOver, grid, pieces]
+  );
+
+  useEffect(() => {
+    if (!dragging) return undefined;
+
+    const handleMove = (event) => {
+      setDragPosition({ x: event.clientX, y: event.clientY });
+      const placement = getPlacementFromPointer(
+        boardRef.current,
+        dragging,
+        event.clientX,
+        event.clientY
+      );
+      setHoverCell(placement);
+    };
+
+    const handleUp = (event) => {
+      const placement = getPlacementFromPointer(
+        boardRef.current,
+        dragging,
+        event.clientX,
+        event.clientY
+      );
+      if (placement) {
+        commitPlacement(dragging.index, placement.row, placement.col);
+      }
+      setDragging(null);
+      setDragPosition(null);
+      setHoverCell(null);
+    };
+
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+    };
+  }, [commitPlacement, dragging]);
+
+  const reset = () => {
+    setGrid(createEmptyGrid());
+    setPieces([rollPiece(), rollPiece(), rollPiece()]);
+    setSelectedIndex(0);
+    setHoverCell(null);
+    setDragging(null);
+    setDragPosition(null);
+    setScore(0);
+    scoreRef.current = 0;
+    setGameOver(false);
+  };
+
+  return (
+    <div className="space-y-4" style={{ '--bb-cell-size': 'clamp(30px, 6vw, 46px)' }}>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-widest text-zinc-400">
+        <span>Score: {score}</span>
+        <span>Best: {best}</span>
+        <span>{gameOver ? 'No moves' : 'Ready'}</span>
+      </div>
+      <div className="flex flex-col items-center gap-5">
+        <div className="bb-board">
+          <div
+            className="bb-grid"
+            style={{
+              gridTemplateColumns: `repeat(${BLOCK_GRID_SIZE}, var(--bb-cell-size))`,
+            }}
+            ref={boardRef}
+          >
+            {grid.map((row, rowIndex) =>
+              row.map((cell, colIndex) => {
+                const key = `${rowIndex}-${colIndex}`;
+                const isPreview = previewCells?.has(key);
+                const colorClass = cell || (isPreview ? activePiece?.color : '');
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-label={`Row ${rowIndex + 1} column ${colIndex + 1}`}
+                    disabled={!activePiece || gameOver}
+                    className={`bb-cell ${
+                      cell ? 'bb-cell--filled' : 'bb-cell--empty'
+                    } ${isPreview ? 'bb-cell--ghost' : ''} ${colorClass}`}
+                  />
+                );
+              })
+            )}
+          </div>
+          {gameOver && (
+            <div className="bb-overlay">
+              <div className="bb-overlay__lines" aria-hidden="true">
+                <span className="bb-overlay__line bb-overlay__line--forward" />
+                <span className="bb-overlay__line bb-overlay__line--back" />
+              </div>
+              <button
+                type="button"
+                onClick={reset}
+                className="bb-overlay__button rounded-xl border border-red-300/40 bg-red-500/20 px-5 py-2 text-xs uppercase tracking-[0.35em] text-red-100 hover:bg-red-500/30"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="flex w-full flex-wrap items-center justify-center gap-4">
+          {pieces.map((piece, index) => {
+            const isActive = index === activeIndex && piece;
+            return (
+              <button
+                key={piece?.key ?? `empty-${index}`}
+                type="button"
+                onClick={() => {
+                  if (!piece || gameOver) return;
+                  setSelectedIndex(index);
+                }}
+                onPointerDown={(event) => {
+                  if (!piece || gameOver) return;
+                  event.preventDefault();
+                  const gridElement = event.currentTarget.querySelector('.bb-piece-grid');
+                  if (!gridElement) return;
+                  const rect = gridElement.getBoundingClientRect();
+                  const rawOffsetX = event.clientX - rect.left;
+                  const rawOffsetY = event.clientY - rect.top;
+                  const offsetX = Math.min(Math.max(rawOffsetX, 0), rect.width);
+                  const offsetY = Math.min(Math.max(rawOffsetY, 0), rect.height);
+                  const cellSize = rect.width / piece.width;
+                  const anchorData = pickAnchorCell(piece, offsetX, offsetY, cellSize);
+                  setSelectedIndex(index);
+                  setDragging({
+                    index,
+                    offsetX: anchorData.offset.x,
+                    offsetY: anchorData.offset.y,
+                    anchor: anchorData.anchor,
+                  });
+                  setDragPosition({ x: event.clientX, y: event.clientY });
+                }}
+                disabled={!piece || gameOver}
+                className={`bb-piece ${isActive ? 'bb-piece--active' : ''} ${
+                  dragging?.index === index ? 'bb-piece--dragging' : ''
+                } ${piece ? '' : 'opacity-40'}`}
+                aria-pressed={isActive}
+              >
+                {piece ? (
+                  <div
+                    className="bb-grid bb-piece-grid"
+                    style={{
+                      gridTemplateColumns: `repeat(${piece.width}, var(--bb-cell-size))`,
+                    }}
+                  >
+                    {Array.from({ length: piece.width * piece.height }).map((_, cellIndex) => {
+                      const x = cellIndex % piece.width;
+                      const y = Math.floor(cellIndex / piece.width);
+                      const filled = piece.cells.some(
+                        ([cellX, cellY]) => cellX === x && cellY === y
+                      );
+                      return (
+                        <div
+                          key={`${piece.key}-${cellIndex}`}
+                          className={`bb-cell ${
+                            filled ? 'bb-cell--filled' : 'bb-cell--empty'
+                          } ${filled ? piece.color : ''}`}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bb-piece-empty" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={reset}
+          className="rounded-xl border border-white/10 bg-blue-500/20 px-4 py-2 text-xs uppercase tracking-[0.35em] text-blue-100 hover:bg-blue-500/30"
+        >
+          Restart
+        </button>
+      </div>
+      {dragging && dragPosition && activePiece && (
+        <div
+          className="bb-drag"
+          style={{
+            left: dragPosition.x - dragging.offsetX,
+            top: dragPosition.y - dragging.offsetY,
+          }}
+        >
+          <div
+            className="bb-grid bb-piece-grid"
+            style={{
+              gridTemplateColumns: `repeat(${activePiece.width}, var(--bb-cell-size))`,
+            }}
+          >
+            {Array.from({ length: activePiece.width * activePiece.height }).map(
+              (_, cellIndex) => {
+                const x = cellIndex % activePiece.width;
+                const y = Math.floor(cellIndex / activePiece.width);
+                const filled = activePiece.cells.some(
+                  ([cellX, cellY]) => cellX === x && cellY === y
+                );
+                return (
+                  <div
+                    key={`${activePiece.key}-drag-${cellIndex}`}
+                    className={`bb-cell ${
+                      filled ? 'bb-cell--filled' : 'bb-cell--empty'
+                    } ${filled ? activePiece.color : ''}`}
+                  />
+                );
+              }
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -537,6 +1154,23 @@ const GamesPage = () => {
         </header>
 
         <section className="container mx-auto px-4 space-y-6">
+          <motion.article
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            viewport={{ once: true, amount: 0.3 }}
+            className="glass-card hover-change p-6 rounded-3xl"
+          >
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <div className="text-2xl font-semibold text-white">Block Blast</div>
+              </div>
+            </div>
+            <div className="mt-6">
+              <BlockBlast />
+            </div>
+          </motion.article>
+
           <motion.article
             initial={{ opacity: 0, y: 18 }}
             whileInView={{ opacity: 1, y: 0 }}
