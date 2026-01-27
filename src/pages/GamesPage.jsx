@@ -287,55 +287,30 @@ const hasMove = (grid, pieces) =>
     return false;
   });
 
-const pickAnchorCell = (piece, offsetX, offsetY, cellSize) => {
-  if (!piece.cells.length) {
-    return {
-      anchor: { x: 0, y: 0 },
-      offset: { x: 0, y: 0 },
-    };
-  }
-
-  let bestCell = piece.cells[0];
-  let bestDist = Number.POSITIVE_INFINITY;
-  piece.cells.forEach(([x, y]) => {
-    const centerX = (x + 0.5) * cellSize;
-    const centerY = (y + 0.5) * cellSize;
-    const dx = centerX - offsetX;
-    const dy = centerY - offsetY;
-    const dist = dx * dx + dy * dy;
-    if (dist < bestDist) {
-      bestDist = dist;
-      bestCell = [x, y];
-    }
-  });
-
-  return {
-    anchor: { x: bestCell[0], y: bestCell[1] },
-    offset: {
-      x: (bestCell[0] + 0.5) * cellSize,
-      y: (bestCell[1] + 0.5) * cellSize,
-    },
-  };
-};
-
-const getPlacementFromPointer = (board, dragData, clientX, clientY) => {
-  if (!board || !dragData) return null;
+const getNearestPlacement = (grid, piece, board, pieceLeft, pieceTop) => {
+  if (!board || !piece) return null;
   const rect = board.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return null;
-  if (
-    clientX < rect.left ||
-    clientX >= rect.right ||
-    clientY < rect.top ||
-    clientY >= rect.bottom
-  ) {
-    return null;
-  }
   const cellSize = rect.width / BLOCK_GRID_SIZE;
-  const rawCol = Math.floor((clientX - rect.left + cellSize / 2) / cellSize);
-  const rawRow = Math.floor((clientY - rect.top + cellSize / 2) / cellSize);
-  const col = Math.min(Math.max(rawCol, 0), BLOCK_GRID_SIZE - 1);
-  const row = Math.min(Math.max(rawRow, 0), BLOCK_GRID_SIZE - 1);
-  return { row: row - dragData.anchor.y, col: col - dragData.anchor.x };
+  const rawCol = (pieceLeft - rect.left) / cellSize;
+  const rawRow = (pieceTop - rect.top) / cellSize;
+  const maxRow = BLOCK_GRID_SIZE - piece.height;
+  const maxCol = BLOCK_GRID_SIZE - piece.width;
+
+  let best = null;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (let row = 0; row <= maxRow; row += 1) {
+    for (let col = 0; col <= maxCol; col += 1) {
+      if (!canPlacePiece(grid, piece, row, col)) continue;
+      const dist = (row - rawRow) * (row - rawRow) + (col - rawCol) * (col - rawCol);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = { row, col };
+      }
+    }
+  }
+
+  return best;
 };
 
 const TinyRunner = () => {
@@ -674,26 +649,42 @@ const BlockBlast = () => {
   useEffect(() => {
     if (!dragging) return undefined;
 
+    const getDragMetrics = (clientX, clientY) => {
+      const board = boardRef.current;
+      if (!board || !activePiece) return null;
+      const rect = board.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return null;
+      const liftRange = 240;
+      const maxLift = 140;
+      const baseLift = 48;
+      const speedX = 1.0;
+      const speedUp = 1.4;
+      const speedDown = 1.0;
+      const distance = clientY - rect.top;
+      const clamped = Math.min(Math.max(distance, 0), liftRange);
+      const lift = baseLift + maxLift * (1 - clamped / liftRange);
+      const dx = clientX - dragging.startX;
+      const dy = clientY - dragging.startY;
+      const adjustedY = dy < 0 ? dy * speedUp : dy * speedDown;
+      const left = dragging.startLeft + dx * speedX;
+      let top = dragging.startTop + adjustedY - lift;
+      const minTop = clientY - dragging.offsetY - baseLift;
+      if (top > minTop) top = minTop;
+      const placement = getNearestPlacement(grid, activePiece, board, left, top);
+      return { left, top, placement };
+    };
+
     const handleMove = (event) => {
-      setDragPosition({ x: event.clientX, y: event.clientY });
-      const placement = getPlacementFromPointer(
-        boardRef.current,
-        dragging,
-        event.clientX,
-        event.clientY
-      );
-      setHoverCell(placement);
+      const metrics = getDragMetrics(event.clientX, event.clientY);
+      if (!metrics) return;
+      setDragPosition({ left: metrics.left, top: metrics.top });
+      setHoverCell(metrics.placement);
     };
 
     const handleUp = (event) => {
-      const placement = getPlacementFromPointer(
-        boardRef.current,
-        dragging,
-        event.clientX,
-        event.clientY
-      );
-      if (placement) {
-        commitPlacement(dragging.index, placement.row, placement.col);
+      const metrics = getDragMetrics(event.clientX, event.clientY);
+      if (metrics?.placement) {
+        commitPlacement(dragging.index, metrics.placement.row, metrics.placement.col);
       }
       setDragging(null);
       setDragPosition(null);
@@ -709,7 +700,7 @@ const BlockBlast = () => {
       window.removeEventListener('pointerup', handleUp);
       window.removeEventListener('pointercancel', handleUp);
     };
-  }, [commitPlacement, dragging]);
+  }, [activePiece, commitPlacement, dragging, grid]);
 
   const reset = () => {
     setGrid(createEmptyGrid());
@@ -795,16 +786,36 @@ const BlockBlast = () => {
                   const rawOffsetY = event.clientY - rect.top;
                   const offsetX = Math.min(Math.max(rawOffsetX, 0), rect.width);
                   const offsetY = Math.min(Math.max(rawOffsetY, 0), rect.height);
-                  const cellSize = rect.width / piece.width;
-                  const anchorData = pickAnchorCell(piece, offsetX, offsetY, cellSize);
                   setSelectedIndex(index);
                   setDragging({
                     index,
-                    offsetX: anchorData.offset.x,
-                    offsetY: anchorData.offset.y,
-                    anchor: anchorData.anchor,
+                    offsetX,
+                    offsetY,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    startLeft: event.clientX - offsetX,
+                    startTop: event.clientY - offsetY,
                   });
-                  setDragPosition({ x: event.clientX, y: event.clientY });
+                  const board = boardRef.current;
+                  if (board) {
+                    const boardRect = board.getBoundingClientRect();
+                    const liftRange = 240;
+                    const maxLift = 140;
+                    const baseLift = 48;
+                    const distance = event.clientY - boardRect.top;
+                    const clamped = Math.min(Math.max(distance, 0), liftRange);
+                    const lift = baseLift + maxLift * (1 - clamped / liftRange);
+                    const left = event.clientX - offsetX;
+                    const top = event.clientY - offsetY - lift;
+                    setDragPosition({ left, top });
+                    setHoverCell(getNearestPlacement(grid, piece, board, left, top));
+                  } else {
+                    const baseLift = 48;
+                    setDragPosition({
+                      left: event.clientX - offsetX,
+                      top: event.clientY - offsetY - baseLift,
+                    });
+                  }
                 }}
                 disabled={!piece || gameOver}
                 className={`bb-piece ${isActive ? 'bb-piece--active' : ''} ${
@@ -854,8 +865,8 @@ const BlockBlast = () => {
         <div
           className="bb-drag"
           style={{
-            left: dragPosition.x - dragging.offsetX,
-            top: dragPosition.y - dragging.offsetY,
+            left: dragPosition.left,
+            top: dragPosition.top,
           }}
         >
           <div
