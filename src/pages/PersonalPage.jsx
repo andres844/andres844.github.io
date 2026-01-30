@@ -141,7 +141,7 @@ const PersonalPage = () => {
             />
             <div>
               <p className="text-gray-300 mb-4">
-                Maxed out at 5.11b; aiming for 5.12+ by the end of 2025.
+                Maxed out at 5.11b; aiming for 5.12+ by the end of 2026.
               </p>
             </div>
           </HobbySection>
@@ -154,7 +154,7 @@ const PersonalPage = () => {
                 Passionate about experiencing new cultures and environments.
               </p>
               <p className="text-gray-300 mb-4 text-2xl">
-                🇩🇪 🇫🇷 🇨🇭 🇦🇹 🇮🇹 🇹🇭 🇯🇵 🇪🇸
+                🇩🇪 🇫🇷 🇨🇭 🇦🇹 🇮🇹 🇹🇭 🇯🇵 🇪🇸 🇵🇹
               </p>
               <p className="text-gray-300 mb-3">
                 Most memorable moment: almost getting attacked by a wild boar in Kyoto, Japan.

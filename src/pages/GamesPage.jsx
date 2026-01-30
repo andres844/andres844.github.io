@@ -636,7 +636,7 @@ const TinyRunner = () => {
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-widest text-zinc-400">
         <span>Score: {score}</span>
         <span>Best: {best}</span>
-        <span>{running ? 'Jump: space / tap' : 'Ready'}</span>
+        {running && <span>Jump: space / tap</span>}
       </div>
       <button
         type="button"
@@ -717,10 +717,12 @@ const BlockBlast = () => {
   const [dragPosition, setDragPosition] = useState(null);
   const [score, setScore] = useState(0);
   const [comboStreak, setComboStreak] = useState(0);
+  const [comboToast, setComboToast] = useState(null);
   const [best, setBest] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
+  const comboToastRef = useRef(0);
 
   const cycleTheme = useCallback(() => {
     setCounterRef.current += 1;
@@ -739,6 +741,15 @@ const BlockBlast = () => {
     const nextIndex = pieces.findIndex(Boolean);
     setSelectedIndex(nextIndex === -1 ? null : nextIndex);
   }, [pieces, selectedIndex]);
+
+  useEffect(
+    () => () => {
+      if (comboToastRef.current) {
+        clearTimeout(comboToastRef.current);
+      }
+    },
+    []
+  );
 
   const previewCells = useMemo(() => {
     if (!dragging || !activePiece || !hoverCell || gameOver) return null;
@@ -759,19 +770,34 @@ const BlockBlast = () => {
       const placed = placePiece(grid, piece, row, col);
       const { grid: cleared, linesCleared } = clearLines(placed);
       let nextStreak = comboRef.current;
+      let comboLevel = 0;
       if (linesCleared > 0) {
         nextStreak = comboRef.current + 1;
         comboRef.current = nextStreak;
         setComboStreak(nextStreak);
         clearsThisSetRef.current += 1;
+        comboLevel = Math.max(0, nextStreak - 2);
       }
-      const baseScore = piece.cells.length + linesCleared * BLOCK_GRID_SIZE;
+      const baseScore =
+        piece.cells.length * 2 + linesCleared * BLOCK_GRID_SIZE * 3;
       const multiplier =
-        linesCleared > 0 && nextStreak >= 3 ? nextStreak - 1 : 1;
+        linesCleared > 0 && comboLevel > 0 ? 1 + comboLevel * 3 : 1;
       const gained = baseScore * multiplier;
       const nextScore = scoreRef.current + gained;
       scoreRef.current = nextScore;
       setScore(nextScore);
+      if (linesCleared > 0 && comboLevel > 0) {
+        if (comboToastRef.current) clearTimeout(comboToastRef.current);
+        setComboToast({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          comboLevel,
+          multiplier,
+          linesCleared,
+        });
+        comboToastRef.current = window.setTimeout(() => {
+          setComboToast(null);
+        }, 900);
+      }
 
       let nextPieces = pieces.map((item, index) =>
         index === pieceIndex ? null : item
@@ -887,11 +913,13 @@ const BlockBlast = () => {
 
   return (
     <div className="space-y-4" style={{ '--bb-cell-size': 'clamp(30px, 6vw, 46px)' }}>
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-widest text-zinc-400">
-        <span>Score: {score}</span>
-        <span>Best: {best}</span>
-        <span>{comboStreak >= 3 ? `Combo x${comboStreak - 1}` : 'Combo --'}</span>
-        <span>{gameOver ? 'No moves' : 'Ready'}</span>
+      <div className="bb-scoreboard flex flex-wrap items-center justify-between gap-3">
+        <span className="bb-score-pill">Score: {score}</span>
+        <span className="bb-score-pill">Best: {best}</span>
+        <span className="bb-score-pill">
+          {comboStreak >= 3 ? `Combo x${comboStreak - 2}` : 'Combo --'}
+        </span>
+        {gameOver && <span className="bb-score-pill">No moves</span>}
       </div>
       <div className="flex flex-col items-center gap-5">
         <div className="bb-board">
@@ -934,6 +962,17 @@ const BlockBlast = () => {
               >
                 Retry
               </button>
+            </div>
+          )}
+          {comboToast && (
+            <div key={comboToast.id} className="bb-combo-toast" aria-live="polite">
+              <span className="bb-combo-toast__badge">Combo</span>
+              <span className="bb-combo-toast__text">x{comboToast.comboLevel}</span>
+              {comboToast.linesCleared > 1 && (
+                <span className="bb-combo-toast__lines">
+                  {comboToast.linesCleared} lines
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -1397,9 +1436,6 @@ const GamesPage = () => {
                   A minimalist sprint. Jump the blocks and see how long you last.
                 </p>
               </div>
-              <span className="text-xs uppercase tracking-[0.4em] text-blue-200">
-                Main Event
-              </span>
             </div>
             <div className="mt-6">
               <TinyRunner />
