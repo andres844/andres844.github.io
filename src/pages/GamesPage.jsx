@@ -12,6 +12,47 @@ const BLOCK_COLORS = [
   'bb-block--amber',
 ];
 
+const COLOR_THEMES = [
+  {
+    name: 'Aurora',
+    palette: [
+      'bb-block--aurora-1',
+      'bb-block--aurora-2',
+      'bb-block--aurora-3',
+      'bb-block--aurora-4',
+    ],
+  },
+  {
+    name: 'Sunset',
+    palette: [
+      'bb-block--sunset-1',
+      'bb-block--sunset-2',
+      'bb-block--sunset-3',
+      'bb-block--sunset-4',
+    ],
+  },
+  {
+    name: 'DeepSea',
+    palette: [
+      'bb-block--deep-1',
+      'bb-block--deep-2',
+      'bb-block--deep-3',
+      'bb-block--deep-4',
+    ],
+  },
+  {
+    name: 'Citrus',
+    palette: [
+      'bb-block--citrus-1',
+      'bb-block--citrus-2',
+      'bb-block--citrus-3',
+      'bb-block--citrus-4',
+    ],
+  },
+];
+
+const THEME_CYCLE_EVERY = 2;
+
 const createShape = (id, cells) => {
   const width = Math.max(...cells.map(([x]) => x)) + 1;
   const height = Math.max(...cells.map(([, y]) => y)) + 1;
@@ -103,26 +144,6 @@ const SHAPES = {
       [2, 0],
       [2, 1],
     ]),
-    createShape('rect-2x4-h', [
-      [0, 0],
-      [1, 0],
-      [2, 0],
-      [3, 0],
-      [0, 1],
-      [1, 1],
-      [2, 1],
-      [3, 1],
-    ]),
-    createShape('rect-2x4-v', [
-      [0, 0],
-      [1, 0],
-      [0, 1],
-      [1, 1],
-      [0, 2],
-      [1, 2],
-      [0, 3],
-      [1, 3],
-    ]),
     createShape('rect-2x3-h', [
       [0, 0],
       [1, 0],
@@ -194,26 +215,15 @@ const SHAPES = {
   ],
 };
 
-const rollTier = () => {
-  const roll = Math.random();
-  if (roll < 0.5) return 'easy';
-  if (roll < 0.65) return 'medium';
-  return 'hard';
+const SHAPE_WEIGHTS = {
+  easy: 1,
+  medium: 0.9,
+  hard: 0.8,
 };
 
-const rollPiece = () => {
-  const tier = rollTier();
-  const shapes = SHAPES[tier];
-  const shape = shapes[Math.floor(Math.random() * shapes.length)];
-  const color = BLOCK_COLORS[Math.floor(Math.random() * BLOCK_COLORS.length)];
-  return {
-    key: `${tier}-${shape.id}-${Math.random().toString(36).slice(2, 8)}`,
-    cells: shape.cells,
-    width: shape.width,
-    height: shape.height,
-    color,
-  };
-};
+const SHAPE_LIBRARY = Object.entries(SHAPES).flatMap(([tier, shapes]) =>
+  shapes.map((shape) => ({ tier, shape }))
+);
 
 const createEmptyGrid = () =>
   Array.from({ length: BLOCK_GRID_SIZE }, () => Array(BLOCK_GRID_SIZE).fill(null));
@@ -278,6 +288,93 @@ const clearLines = (grid) => {
     }
   });
   return { grid: next, linesCleared: rowsToClear.length + colsToClear.length };
+};
+
+const scorePlacement = (grid, piece, row, col) => {
+  if (!canPlacePiece(grid, piece, row, col)) return null;
+  const placed = placePiece(grid, piece, row, col);
+  const { grid: cleared, linesCleared } = clearLines(placed);
+  let nearComplete = 0;
+
+  for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) {
+    const filled = cleared[r].filter(Boolean).length;
+    if (filled >= BLOCK_GRID_SIZE - 1) nearComplete += 1;
+  }
+  for (let c = 0; c < BLOCK_GRID_SIZE; c += 1) {
+    let filled = 0;
+    for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) {
+      if (cleared[r][c]) filled += 1;
+    }
+    if (filled >= BLOCK_GRID_SIZE - 1) nearComplete += 1;
+  }
+
+  return linesCleared * 1000 + nearComplete * 25 + piece.cells.length * 2;
+};
+
+const findBestPlacement = (grid, shape) => {
+  let best = null;
+  for (let row = 0; row <= BLOCK_GRID_SIZE - shape.height; row += 1) {
+    for (let col = 0; col <= BLOCK_GRID_SIZE - shape.width; col += 1) {
+      const score = scorePlacement(grid, shape, row, col);
+      if (score === null) continue;
+      if (!best || score > best.score) best = { score, row, col };
+    }
+  }
+  return best;
+};
+
+const scorePieceForGrid = (grid, shape, weight) => {
+  const best = findBestPlacement(grid, shape);
+  return best ? best.score * weight + Math.random() * 4 : null;
+};
+
+const pickWeighted = (list) => {
+  const minScore = Math.min(...list.map((item) => item.score));
+  const weights = list.map((item) => Math.max(1, item.score - minScore + 1));
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  let roll = Math.random() * total;
+  for (let i = 0; i < list.length; i += 1) {
+    roll -= weights[i];
+    if (roll <= 0) return list[i];
+  }
+  return list[list.length - 1];
+};
+
+const generatePieceSet = (grid, palette = BLOCK_COLORS) => {
+  const picks = [];
+  let workingGrid = grid;
+
+  for (let i = 0; i < 3; i += 1) {
+    const candidates = SHAPE_LIBRARY.map(({ tier, shape }) => {
+      const score = scorePieceForGrid(workingGrid, shape, SHAPE_WEIGHTS[tier] ?? 1);
+      return { tier, shape, score };
+    });
+    const playable = candidates.filter((item) => item.score !== null);
+    const pool = playable.length
+      ? playable
+      : candidates.map((item) => ({ ...item, score: 1 }));
+    const sorted = [...pool].sort((a, b) => b.score - a.score);
+    const top = sorted.slice(0, Math.min(6, sorted.length));
+    const list = Math.random() < 0.75 ? top : sorted;
+    const chosen = pickWeighted(list);
+    const color = palette[Math.floor(Math.random() * palette.length)];
+    const piece = {
+      key: `${chosen.tier}-${chosen.shape.id}-${Math.random().toString(36).slice(2, 8)}`,
+      cells: chosen.shape.cells,
+      width: chosen.shape.width,
+      height: chosen.shape.height,
+      color,
+    };
+    picks.push(piece);
+
+    const bestPlacement = findBestPlacement(workingGrid, chosen.shape);
+    if (bestPlacement) {
+      const placed = placePiece(workingGrid, piece, bestPlacement.row, bestPlacement.col);
+      workingGrid = clearLines(placed).grid;
+    }
+  }
+
+  return picks;
 };
 
 const hasMove = (grid, pieces) =>
@@ -608,15 +705,31 @@ const TinyRunner = () => {
 const BlockBlast = () => {
   const boardRef = useRef(null);
   const [grid, setGrid] = useState(createEmptyGrid);
-  const [pieces, setPieces] = useState(() => [rollPiece(), rollPiece(), rollPiece()]);
+  const themeRef = useRef(0);
+  const setCounterRef = useRef(0);
+  const clearsThisSetRef = useRef(0);
+  const [pieces, setPieces] = useState(() =>
+    generatePieceSet(createEmptyGrid(), COLOR_THEMES[0]?.palette ?? BLOCK_COLORS)
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [hoverCell, setHoverCell] = useState(null);
   const [dragging, setDragging] = useState(null);
   const [dragPosition, setDragPosition] = useState(null);
   const [score, setScore] = useState(0);
+  const [comboStreak, setComboStreak] = useState(0);
   const [best, setBest] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const scoreRef = useRef(0);
+  const comboRef = useRef(0);
+
+  const cycleTheme = useCallback(() => {
+    setCounterRef.current += 1;
+    if (setCounterRef.current % THEME_CYCLE_EVERY === 0) {
+      const nextTheme = (themeRef.current + 1) % COLOR_THEMES.length;
+      themeRef.current = nextTheme;
+    }
+    return COLOR_THEMES[themeRef.current]?.palette ?? BLOCK_COLORS;
+  }, []);
 
   const activeIndex = dragging ? dragging.index : selectedIndex;
   const activePiece = activeIndex !== null ? pieces[activeIndex] : null;
@@ -645,7 +758,17 @@ const BlockBlast = () => {
 
       const placed = placePiece(grid, piece, row, col);
       const { grid: cleared, linesCleared } = clearLines(placed);
-      const gained = piece.cells.length + linesCleared * BLOCK_GRID_SIZE;
+      let nextStreak = comboRef.current;
+      if (linesCleared > 0) {
+        nextStreak = comboRef.current + 1;
+        comboRef.current = nextStreak;
+        setComboStreak(nextStreak);
+        clearsThisSetRef.current += 1;
+      }
+      const baseScore = piece.cells.length + linesCleared * BLOCK_GRID_SIZE;
+      const multiplier =
+        linesCleared > 0 && nextStreak >= 3 ? nextStreak - 1 : 1;
+      const gained = baseScore * multiplier;
       const nextScore = scoreRef.current + gained;
       scoreRef.current = nextScore;
       setScore(nextScore);
@@ -654,7 +777,13 @@ const BlockBlast = () => {
         index === pieceIndex ? null : item
       );
       if (nextPieces.every((item) => !item)) {
-        nextPieces = [rollPiece(), rollPiece(), rollPiece()];
+        if (clearsThisSetRef.current === 0) {
+          comboRef.current = 0;
+          setComboStreak(0);
+        }
+        clearsThisSetRef.current = 0;
+        const nextPalette = cycleTheme();
+        nextPieces = generatePieceSet(cleared, nextPalette);
       }
 
       setGrid(cleared);
@@ -668,7 +797,7 @@ const BlockBlast = () => {
 
       return true;
     },
-    [gameOver, grid, pieces]
+    [cycleTheme, gameOver, grid, pieces]
   );
 
   useEffect(() => {
@@ -741,13 +870,18 @@ const BlockBlast = () => {
 
   const reset = () => {
     setGrid(createEmptyGrid());
-    setPieces([rollPiece(), rollPiece(), rollPiece()]);
+    setPieces(generatePieceSet(createEmptyGrid(), COLOR_THEMES[0]?.palette ?? BLOCK_COLORS));
     setSelectedIndex(0);
     setHoverCell(null);
     setDragging(null);
     setDragPosition(null);
     setScore(0);
     scoreRef.current = 0;
+    setComboStreak(0);
+    comboRef.current = 0;
+    clearsThisSetRef.current = 0;
+    themeRef.current = 0;
+    setCounterRef.current = 0;
     setGameOver(false);
   };
 
@@ -756,6 +890,7 @@ const BlockBlast = () => {
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-widest text-zinc-400">
         <span>Score: {score}</span>
         <span>Best: {best}</span>
+        <span>{comboStreak >= 3 ? `Combo x${comboStreak - 1}` : 'Combo --'}</span>
         <span>{gameOver ? 'No moves' : 'Ready'}</span>
       </div>
       <div className="flex flex-col items-center gap-5">
