@@ -1,12 +1,3 @@
-@keyframes carousel-scroll {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
 /* Glassmorphism Card */
 .glass-card {
   background: rgba(255, 255, 255, 0.045);
@@ -21,20 +12,6 @@
 .glass-card.hover-change:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Subtle ASCII waves background (canvas) */
-.ascii-waves {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  display: block;
-  width: 100%;
-  height: 100%;
-  /* fade near top/bottom for subtlety */
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
 }
 
 @keyframes ripple-expand {
