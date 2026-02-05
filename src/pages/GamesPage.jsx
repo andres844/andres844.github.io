@@ -1399,7 +1399,7 @@ const GamesPage = () => {
             Games Arcade
           </motion.h1>
           <p className="text-zinc-400 mt-4 max-w-2xl mx-auto">
-            A tiny playground of quick challenges. Enjoy :)
+            Work in progress. Enjoy :)
           </p>
           <SectionAccent className="mx-auto w-56 mt-6" />
         </header>
@@ -1433,7 +1433,7 @@ const GamesPage = () => {
               <div>
                 <div className="text-2xl font-semibold text-white">Tiny Runner</div>
                 <p className="text-sm text-zinc-400 max-w-lg">
-                  A minimalist sprint. Jump the blocks and see how long you last.
+                  Geometry dash dupe. Jump the blocks and see how long you last.
                 </p>
               </div>
             </div>
