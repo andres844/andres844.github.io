@@ -274,7 +274,7 @@ const clearLines = (grid) => {
     if (full) colsToClear.push(col);
   }
   if (!rowsToClear.length && !colsToClear.length) {
-    return { grid, linesCleared: 0 };
+    return { grid, linesCleared: 0, clearedRows: [], clearedCols: [] };
   }
   const next = grid.map((line) => line.slice());
   rowsToClear.forEach((row) => {
@@ -287,7 +287,12 @@ const clearLines = (grid) => {
       next[row][col] = null;
     }
   });
-  return { grid: next, linesCleared: rowsToClear.length + colsToClear.length };
+  return {
+    grid: next,
+    linesCleared: rowsToClear.length + colsToClear.length,
+    clearedRows: rowsToClear,
+    clearedCols: colsToClear,
+  };
 };
 
 const scorePlacement = (grid, piece, row, col) => {
@@ -397,10 +402,11 @@ const getSnappedPlacement = (
   pieceLeft,
   pieceTop,
   maxRadius = 2,
-  maxDistance = 1
+  maxDistance = 1,
+  boardRectOverride = null
 ) => {
   if (!board || !piece) return null;
-  const rect = board.getBoundingClientRect();
+  const rect = boardRectOverride ?? board.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return null;
   const cellSize = rect.width / BLOCK_GRID_SIZE;
   const rawCol = (pieceLeft - rect.left) / cellSize;
@@ -718,11 +724,17 @@ const BlockBlast = () => {
   const [score, setScore] = useState(0);
   const [comboStreak, setComboStreak] = useState(0);
   const [comboToast, setComboToast] = useState(null);
+  const [popCells, setPopCells] = useState(null);
   const [best, setBest] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
   const comboToastRef = useRef(0);
+  const popTimeoutRef = useRef(0);
+  const dragRafRef = useRef(0);
+  const dragPointerRef = useRef({ x: 0, y: 0 });
+  const lastPlacementRef = useRef(null);
+  const lastDragPosRef = useRef(null);
 
   const cycleTheme = useCallback(() => {
     setCounterRef.current += 1;
@@ -747,6 +759,12 @@ const BlockBlast = () => {
       if (comboToastRef.current) {
         clearTimeout(comboToastRef.current);
       }
+      if (popTimeoutRef.current) {
+        clearTimeout(popTimeoutRef.current);
+      }
+      if (dragRafRef.current) {
+        cancelAnimationFrame(dragRafRef.current);
+      }
     },
     []
   );
@@ -768,7 +786,7 @@ const BlockBlast = () => {
       if (!canPlacePiece(grid, piece, row, col)) return false;
 
       const placed = placePiece(grid, piece, row, col);
-      const { grid: cleared, linesCleared } = clearLines(placed);
+      const { grid: cleared, linesCleared, clearedRows, clearedCols } = clearLines(placed);
       let nextStreak = comboRef.current;
       let comboLevel = 0;
       if (linesCleared > 0) {
@@ -777,6 +795,26 @@ const BlockBlast = () => {
         setComboStreak(nextStreak);
         clearsThisSetRef.current += 1;
         comboLevel = Math.max(0, nextStreak - 2);
+      }
+      if (linesCleared > 0) {
+        const nextPop = {};
+        clearedRows.forEach((row) => {
+          for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+            const color = placed[row][col];
+            if (color) nextPop[`${row}-${col}`] = color;
+          }
+        });
+        clearedCols.forEach((col) => {
+          for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+            const color = placed[row][col];
+            if (color) nextPop[`${row}-${col}`] = color;
+          }
+        });
+        if (popTimeoutRef.current) clearTimeout(popTimeoutRef.current);
+        setPopCells(nextPop);
+        popTimeoutRef.current = window.setTimeout(() => {
+          setPopCells(null);
+        }, 420);
       }
       const baseScore =
         piece.cells.length * 2 + linesCleared * BLOCK_GRID_SIZE * 3;
@@ -831,15 +869,14 @@ const BlockBlast = () => {
 
     const getDragMetrics = (clientX, clientY) => {
       const board = boardRef.current;
-      if (!board || !activePiece) return null;
-      const rect = board.getBoundingClientRect();
+      if (!board || !activePiece || !dragging) return null;
+      const rect = dragging.boardRect ?? board.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return null;
-      const cellSize = rect.width / BLOCK_GRID_SIZE;
-      const previewThreshold = cellSize * 2.2;
+      const cellSize = dragging.cellSize ?? rect.width / BLOCK_GRID_SIZE;
+      const previewThreshold = dragging.previewThreshold ?? cellSize * 2.2;
       const liftRange = 240;
       const maxLift = 140;
       const baseLift = 48;
-      const speedX = 1.0;
       const speedUp = 1.4;
       const speedDown = 1.0;
       const distance = clientY - rect.top;
@@ -861,19 +898,41 @@ const BlockBlast = () => {
       const proximity = distanceBetweenRects(rect, pieceRect);
       const placement =
         proximity <= previewThreshold
-          ? getSnappedPlacement(grid, activePiece, board, left, top, 2, 1)
+          ? getSnappedPlacement(grid, activePiece, board, left, top, 2, 1, rect)
           : null;
       return { left, top, placement };
     };
 
     const handleMove = (event) => {
-      const metrics = getDragMetrics(event.clientX, event.clientY);
-      if (!metrics) return;
-      setDragPosition({ left: metrics.left, top: metrics.top });
-      setHoverCell(metrics.placement);
+      dragPointerRef.current = { x: event.clientX, y: event.clientY };
+      if (dragRafRef.current) return;
+      dragRafRef.current = window.requestAnimationFrame(() => {
+        dragRafRef.current = 0;
+        const { x, y } = dragPointerRef.current;
+        const metrics = getDragMetrics(x, y);
+        if (!metrics) return;
+        const prevPos = lastDragPosRef.current;
+        if (!prevPos || prevPos.left !== metrics.left || prevPos.top !== metrics.top) {
+          lastDragPosRef.current = { left: metrics.left, top: metrics.top };
+          setDragPosition({ left: metrics.left, top: metrics.top });
+        }
+        const prevPlacement = lastPlacementRef.current;
+        const nextPlacement = metrics.placement;
+        const samePlacement =
+          prevPlacement?.row === nextPlacement?.row &&
+          prevPlacement?.col === nextPlacement?.col;
+        if (!samePlacement) {
+          lastPlacementRef.current = nextPlacement;
+          setHoverCell(nextPlacement);
+        }
+      });
     };
 
     const handleUp = (event) => {
+      if (dragRafRef.current) {
+        cancelAnimationFrame(dragRafRef.current);
+        dragRafRef.current = 0;
+      }
       const metrics = getDragMetrics(event.clientX, event.clientY);
       if (metrics?.placement) {
         commitPlacement(dragging.index, metrics.placement.row, metrics.placement.col);
@@ -881,6 +940,8 @@ const BlockBlast = () => {
       setDragging(null);
       setDragPosition(null);
       setHoverCell(null);
+      lastPlacementRef.current = null;
+      lastDragPosRef.current = null;
     };
 
     window.addEventListener('pointermove', handleMove);
@@ -891,6 +952,10 @@ const BlockBlast = () => {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
       window.removeEventListener('pointercancel', handleUp);
+      if (dragRafRef.current) {
+        cancelAnimationFrame(dragRafRef.current);
+        dragRafRef.current = 0;
+      }
     };
   }, [activePiece, commitPlacement, dragging, grid]);
 
@@ -905,6 +970,11 @@ const BlockBlast = () => {
     scoreRef.current = 0;
     setComboStreak(0);
     comboRef.current = 0;
+    setPopCells(null);
+    if (popTimeoutRef.current) {
+      clearTimeout(popTimeoutRef.current);
+      popTimeoutRef.current = 0;
+    }
     clearsThisSetRef.current = 0;
     themeRef.current = 0;
     setCounterRef.current = 0;
@@ -934,7 +1004,12 @@ const BlockBlast = () => {
               row.map((cell, colIndex) => {
                 const key = `${rowIndex}-${colIndex}`;
                 const isPreview = previewCells?.has(key);
-                const colorClass = cell || (isPreview ? activePiece?.color : '');
+                const popColor = popCells?.[key];
+                const isPop = Boolean(popColor);
+                const isFilled = Boolean(cell || isPreview || popColor);
+                const isGhost = Boolean(isPreview && !cell && !isPop);
+                const colorClass =
+                  cell || (isPreview ? activePiece?.color : '') || popColor || '';
                 return (
                   <button
                     key={key}
@@ -942,8 +1017,10 @@ const BlockBlast = () => {
                     aria-label={`Row ${rowIndex + 1} column ${colIndex + 1}`}
                     disabled={!activePiece || gameOver}
                     className={`bb-cell ${
-                      cell ? 'bb-cell--filled' : 'bb-cell--empty'
-                    } ${isPreview ? 'bb-cell--ghost' : ''} ${colorClass}`}
+                      isFilled ? 'bb-cell--filled' : 'bb-cell--empty'
+                    } ${isGhost ? 'bb-cell--ghost' : ''} ${
+                      isPop ? 'bb-cell--pop' : ''
+                    } ${colorClass}`}
                   />
                 );
               })
@@ -1009,6 +1086,7 @@ const BlockBlast = () => {
                     const startLeft = trayRect.left;
                     const startTop = trayRect.top - baseLift;
                     setSelectedIndex(index);
+                    dragPointerRef.current = { x: event.clientX, y: event.clientY };
                     setDragging({
                       index,
                       offsetX: grabOffsetX,
@@ -1017,12 +1095,16 @@ const BlockBlast = () => {
                       startY: event.clientY,
                       startLeft,
                       startTop,
+                      boardRect,
+                      cellSize,
+                      previewThreshold,
                     });
                     const distance = event.clientY - boardRect.top;
                     const clamped = Math.min(Math.max(distance, 0), liftRange);
                     const extraLift = maxLift * (1 - clamped / liftRange);
                     const top = startTop - extraLift;
                     setDragPosition({ left: startLeft, top });
+                    lastDragPosRef.current = { left: startLeft, top };
                     const pieceRect = {
                       left: startLeft,
                       top,
@@ -1030,11 +1112,21 @@ const BlockBlast = () => {
                       bottom: top + pieceHeight,
                     };
                     const proximity = distanceBetweenRects(boardRect, pieceRect);
-                    setHoverCell(
+                      const initialPlacement =
                       proximity <= previewThreshold
-                        ? getSnappedPlacement(grid, piece, board, startLeft, top, 2, 1)
-                        : null
-                    );
+                        ? getSnappedPlacement(
+                            grid,
+                            piece,
+                            board,
+                            startLeft,
+                            top,
+                            2,
+                            1,
+                            boardRect
+                          )
+                        : null;
+                    setHoverCell(initialPlacement);
+                    lastPlacementRef.current = initialPlacement;
                   } else {
                     const baseLift = 48;
                     const grabOffsetX = rect.width / 2;
@@ -1042,6 +1134,7 @@ const BlockBlast = () => {
                     const startLeft = rect.left;
                     const startTop = rect.top - baseLift;
                     setSelectedIndex(index);
+                    dragPointerRef.current = { x: event.clientX, y: event.clientY };
                     setDragging({
                       index,
                       offsetX: grabOffsetX,
@@ -1055,6 +1148,8 @@ const BlockBlast = () => {
                       left: startLeft,
                       top: startTop,
                     });
+                    lastDragPosRef.current = { left: startLeft, top: startTop };
+                    lastPlacementRef.current = null;
                   }
                 }}
                 disabled={!piece || gameOver}

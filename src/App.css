@@ -201,6 +201,28 @@
   cursor: pointer;
 }
 
+@keyframes bb-line-pop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+  40% {
+    transform: scale(1.12);
+    filter: brightness(1.4);
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0;
+    filter: brightness(1);
+  }
+}
+
+.bb-cell--pop {
+  animation: bb-line-pop 0.42s ease-out forwards;
+  z-index: 1;
+}
+
 .bb-cell:disabled {
   cursor: not-allowed;
 }
