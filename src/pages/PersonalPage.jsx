@@ -160,7 +160,7 @@ const PersonalPage = () => {
                 Most memorable moment: almost getting attacked by a wild boar in Kyoto, Japan.
               </p>
               <p className="text-gray-300">
-                Next up?: 🇧🇷 🇨🇷 🇬🇧 
+                Next up?: 🇧🇷 🇬🇧 
               </p>
             </div>
           </HobbySection>

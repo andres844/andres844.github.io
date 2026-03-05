@@ -14,12 +14,16 @@ const BLOCK_COLORS = [
 
 const COLOR_THEMES = [
   {
-    name: 'Aurora',
+    name: 'Verdant',
     palette: [
-      'bb-block--aurora-1',
-      'bb-block--aurora-2',
-      'bb-block--aurora-3',
-      'bb-block--aurora-4',
+      'bb-block--verdant-1',
+      'bb-block--verdant-2',
+      'bb-block--verdant-3',
+      'bb-block--verdant-4',
+      'bb-block--verdant-5',
+      'bb-block--verdant-6',
+      'bb-block--verdant-7',
+      'bb-block--verdant-8',
     ],
   },
   {
@@ -29,34 +33,63 @@ const COLOR_THEMES = [
       'bb-block--sunset-2',
       'bb-block--sunset-3',
       'bb-block--sunset-4',
+      'bb-block--sunset-5',
+      'bb-block--sunset-6',
+      'bb-block--sunset-7',
+      'bb-block--sunset-8',
     ],
   },
   {
-    name: 'DeepSea',
+    name: 'Christmas',
+    palette: [
+      'bb-block--xmas-1',
+      'bb-block--xmas-2',
+      'bb-block--xmas-3',
+      'bb-block--xmas-4',
+      'bb-block--xmas-5',
+      'bb-block--xmas-6',
+      'bb-block--xmas-7',
+      'bb-block--xmas-8',
+    ],
+  },
+  {
+    name: 'Indigo Tide',
     palette: [
       'bb-block--deep-1',
       'bb-block--deep-2',
       'bb-block--deep-3',
       'bb-block--deep-4',
+      'bb-block--deep-5',
+      'bb-block--deep-6',
+      'bb-block--deep-7',
+      'bb-block--deep-8',
     ],
   },
   {
-    name: 'Citrus',
+    name: 'Chrome',
     palette: [
-      'bb-block--citrus-1',
-      'bb-block--citrus-2',
-      'bb-block--citrus-3',
-      'bb-block--citrus-4',
+      'bb-block--chrome-1',
+      'bb-block--chrome-2',
+      'bb-block--chrome-3',
+      'bb-block--chrome-4',
+      'bb-block--chrome-5',
+      'bb-block--chrome-6',
+      'bb-block--chrome-7',
+      'bb-block--chrome-8',
     ],
   },
 ];
 
-const THEME_CYCLE_EVERY = 2;
+const THEME_CYCLE_EVERY = 3;
 
 const createShape = (id, cells) => {
   const width = Math.max(...cells.map(([x]) => x)) + 1;
   const height = Math.max(...cells.map(([, y]) => y)) + 1;
-  return { id, cells, width, height };
+  const filled = Array.from({ length: width * height }, () => false);
+  cells.forEach(([x, y]) => {
+    filled[y * width + x] = true;
+  });
+  return { id, cells, width, height, filled };
 };
 
 const SHAPES = {
@@ -228,6 +261,73 @@ const SHAPE_LIBRARY = Object.entries(SHAPES).flatMap(([tier, shapes]) =>
 const createEmptyGrid = () =>
   Array.from({ length: BLOCK_GRID_SIZE }, () => Array(BLOCK_GRID_SIZE).fill(null));
 
+const cellBit = (row, col) =>
+  1n << BigInt(row * BLOCK_GRID_SIZE + col);
+
+const ROW_MASKS = Array.from({ length: BLOCK_GRID_SIZE }, (_, row) => {
+  let mask = 0n;
+  for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+    mask |= cellBit(row, col);
+  }
+  return mask;
+});
+
+const COL_MASKS = Array.from({ length: BLOCK_GRID_SIZE }, (_, col) => {
+  let mask = 0n;
+  for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+    mask |= cellBit(row, col);
+  }
+  return mask;
+});
+
+const countBits = (mask) => {
+  let value = mask;
+  let count = 0;
+  while (value) {
+    value &= value - 1n;
+    count += 1;
+  }
+  return count;
+};
+
+const gridToMask = (grid) => {
+  let mask = 0n;
+  for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+    for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+      if (grid[row][col]) {
+        mask |= cellBit(row, col);
+      }
+    }
+  }
+  return mask;
+};
+
+const buildPlacementMask = (shape, row, col) => {
+  let mask = 0n;
+  shape.cells.forEach(([x, y]) => {
+    mask |= cellBit(row + y, col + x);
+  });
+  return mask;
+};
+
+const SHAPE_PLACEMENTS = SHAPE_LIBRARY.reduce((map, { shape }) => {
+  if (map[shape.id]) return map;
+
+  const placements = [];
+  for (let row = 0; row <= BLOCK_GRID_SIZE - shape.height; row += 1) {
+    for (let col = 0; col <= BLOCK_GRID_SIZE - shape.width; col += 1) {
+      placements.push({
+        row,
+        col,
+        mask: buildPlacementMask(shape, row, col),
+        cellCount: shape.cells.length,
+      });
+    }
+  }
+  map[shape.id] = placements;
+  return map;
+}, {});
+
 const distanceBetweenRects = (a, b) => {
   const dx = Math.max(a.left - b.right, 0, b.left - a.right);
   const dy = Math.max(a.top - b.bottom, 0, b.top - a.bottom);
@@ -295,42 +395,76 @@ const clearLines = (grid) => {
   };
 };
 
-const scorePlacement = (grid, piece, row, col) => {
-  if (!canPlacePiece(grid, piece, row, col)) return null;
-  const placed = placePiece(grid, piece, row, col);
-  const { grid: cleared, linesCleared } = clearLines(placed);
-  let nearComplete = 0;
+const clearLinesMask = (mask) => {
+  const rowsToClear = [];
+  const colsToClear = [];
 
-  for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) {
-    const filled = cleared[r].filter(Boolean).length;
-    if (filled >= BLOCK_GRID_SIZE - 1) nearComplete += 1;
+  for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+    if ((mask & ROW_MASKS[row]) === ROW_MASKS[row]) rowsToClear.push(row);
   }
-  for (let c = 0; c < BLOCK_GRID_SIZE; c += 1) {
-    let filled = 0;
-    for (let r = 0; r < BLOCK_GRID_SIZE; r += 1) {
-      if (cleared[r][c]) filled += 1;
-    }
-    if (filled >= BLOCK_GRID_SIZE - 1) nearComplete += 1;
+  for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+    if ((mask & COL_MASKS[col]) === COL_MASKS[col]) colsToClear.push(col);
+  }
+  if (!rowsToClear.length && !colsToClear.length) {
+    return { mask, linesCleared: 0, clearedRows: [], clearedCols: [] };
   }
 
-  return linesCleared * 1000 + nearComplete * 25 + piece.cells.length * 2;
+  let clearMask = 0n;
+  rowsToClear.forEach((row) => {
+    clearMask |= ROW_MASKS[row];
+  });
+  colsToClear.forEach((col) => {
+    clearMask |= COL_MASKS[col];
+  });
+
+  return {
+    mask: mask & ~clearMask,
+    linesCleared: rowsToClear.length + colsToClear.length,
+    clearedRows: rowsToClear,
+    clearedCols: colsToClear,
+  };
 };
 
-const findBestPlacement = (grid, shape) => {
+const scorePlacementMask = (boardMask, placement) => {
+  if ((boardMask & placement.mask) !== 0n) return null;
+  const placedMask = boardMask | placement.mask;
+  const { mask: clearedMask, linesCleared } = clearLinesMask(placedMask);
+  let nearComplete = 0;
+
+  for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
+    const filled = countBits(clearedMask & ROW_MASKS[row]);
+    if (filled >= BLOCK_GRID_SIZE - 1) nearComplete += 1;
+  }
+  for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
+    const filled = countBits(clearedMask & COL_MASKS[col]);
+    if (filled >= BLOCK_GRID_SIZE - 1) nearComplete += 1;
+  }
+
+  return linesCleared * 1000 + nearComplete * 25 + placement.cellCount * 2;
+};
+
+const findBestPlacementForMask = (boardMask, shape) => {
+  const placements = SHAPE_PLACEMENTS[shape.id] ?? [];
   let best = null;
-  for (let row = 0; row <= BLOCK_GRID_SIZE - shape.height; row += 1) {
-    for (let col = 0; col <= BLOCK_GRID_SIZE - shape.width; col += 1) {
-      const score = scorePlacement(grid, shape, row, col);
-      if (score === null) continue;
-      if (!best || score > best.score) best = { score, row, col };
+  for (let i = 0; i < placements.length; i += 1) {
+    const placement = placements[i];
+    const score = scorePlacementMask(boardMask, placement);
+    if (score === null) continue;
+    if (!best || score > best.score) {
+      best = {
+        score,
+        row: placement.row,
+        col: placement.col,
+        placementMask: placement.mask,
+      };
     }
   }
   return best;
 };
 
-const scorePieceForGrid = (grid, shape, weight) => {
-  const best = findBestPlacement(grid, shape);
-  return best ? best.score * weight + Math.random() * 4 : null;
+const scorePieceForMask = (boardMask, shape, weight) => {
+  const best = findBestPlacementForMask(boardMask, shape);
+  return best ? { score: best.score * weight + Math.random() * 4, best } : null;
 };
 
 const pickWeighted = (list) => {
@@ -347,12 +481,12 @@ const pickWeighted = (list) => {
 
 const generatePieceSet = (grid, palette = BLOCK_COLORS) => {
   const picks = [];
-  let workingGrid = grid;
+  let workingMask = gridToMask(grid);
 
   for (let i = 0; i < 3; i += 1) {
     const candidates = SHAPE_LIBRARY.map(({ tier, shape }) => {
-      const score = scorePieceForGrid(workingGrid, shape, SHAPE_WEIGHTS[tier] ?? 1);
-      return { tier, shape, score };
+      const ranked = scorePieceForMask(workingMask, shape, SHAPE_WEIGHTS[tier] ?? 1);
+      return { tier, shape, score: ranked?.score ?? null, best: ranked?.best ?? null };
     });
     const playable = candidates.filter((item) => item.score !== null);
     const pool = playable.length
@@ -365,26 +499,34 @@ const generatePieceSet = (grid, palette = BLOCK_COLORS) => {
     const color = palette[Math.floor(Math.random() * palette.length)];
     const piece = {
       key: `${chosen.tier}-${chosen.shape.id}-${Math.random().toString(36).slice(2, 8)}`,
+      shapeId: chosen.shape.id,
       cells: chosen.shape.cells,
       width: chosen.shape.width,
       height: chosen.shape.height,
+      filled: chosen.shape.filled,
       color,
     };
     picks.push(piece);
 
-    const bestPlacement = findBestPlacement(workingGrid, chosen.shape);
-    if (bestPlacement) {
-      const placed = placePiece(workingGrid, piece, bestPlacement.row, bestPlacement.col);
-      workingGrid = clearLines(placed).grid;
+    if (chosen.best?.placementMask) {
+      const placedMask = workingMask | chosen.best.placementMask;
+      workingMask = clearLinesMask(placedMask).mask;
     }
   }
 
   return picks;
 };
 
-const hasMove = (grid, pieces) =>
-  pieces.some((piece) => {
+const hasMove = (grid, pieces) => {
+  const boardMask = gridToMask(grid);
+  return pieces.some((piece) => {
     if (!piece) return false;
+
+    const placements = piece.shapeId ? SHAPE_PLACEMENTS[piece.shapeId] : null;
+    if (placements) {
+      return placements.some((placement) => (boardMask & placement.mask) === 0n);
+    }
+
     for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
       for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
         if (canPlacePiece(grid, piece, row, col)) {
@@ -394,6 +536,7 @@ const hasMove = (grid, pieces) =>
     }
     return false;
   });
+};
 
 const getSnappedPlacement = (
   grid,
@@ -720,7 +863,6 @@ const BlockBlast = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [hoverCell, setHoverCell] = useState(null);
   const [dragging, setDragging] = useState(null);
-  const [dragPosition, setDragPosition] = useState(null);
   const [score, setScore] = useState(0);
   const [comboStreak, setComboStreak] = useState(0);
   const [comboToast, setComboToast] = useState(null);
@@ -732,6 +874,7 @@ const BlockBlast = () => {
   const comboToastRef = useRef(0);
   const popTimeoutRef = useRef(0);
   const dragRafRef = useRef(0);
+  const dragGhostRef = useRef(null);
   const dragPointerRef = useRef({ x: 0, y: 0 });
   const lastPlacementRef = useRef(null);
   const lastDragPosRef = useRef(null);
@@ -778,6 +921,11 @@ const BlockBlast = () => {
       )
     );
   }, [activePiece, dragging, hoverCell, grid, gameOver]);
+
+  const updateDragGhostPosition = useCallback((left, top) => {
+    if (!dragGhostRef.current) return;
+    dragGhostRef.current.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+  }, []);
 
   const commitPlacement = useCallback(
     (pieceIndex, row, col) => {
@@ -882,7 +1030,6 @@ const BlockBlast = () => {
       const distance = clientY - rect.top;
       const clamped = Math.min(Math.max(distance, 0), liftRange);
       const extraLift = maxLift * (1 - clamped / liftRange);
-      const dx = clientX - dragging.startX;
       const dy = clientY - dragging.startY;
       const adjustedY = dy < 0 ? dy * speedUp : dy * speedDown;
       const left = clientX - dragging.offsetX;
@@ -914,7 +1061,7 @@ const BlockBlast = () => {
         const prevPos = lastDragPosRef.current;
         if (!prevPos || prevPos.left !== metrics.left || prevPos.top !== metrics.top) {
           lastDragPosRef.current = { left: metrics.left, top: metrics.top };
-          setDragPosition({ left: metrics.left, top: metrics.top });
+          updateDragGhostPosition(metrics.left, metrics.top);
         }
         const prevPlacement = lastPlacementRef.current;
         const nextPlacement = metrics.placement;
@@ -938,7 +1085,6 @@ const BlockBlast = () => {
         commitPlacement(dragging.index, metrics.placement.row, metrics.placement.col);
       }
       setDragging(null);
-      setDragPosition(null);
       setHoverCell(null);
       lastPlacementRef.current = null;
       lastDragPosRef.current = null;
@@ -957,7 +1103,7 @@ const BlockBlast = () => {
         dragRafRef.current = 0;
       }
     };
-  }, [activePiece, commitPlacement, dragging, grid]);
+  }, [activePiece, commitPlacement, dragging, grid, updateDragGhostPosition]);
 
   const reset = () => {
     setGrid(createEmptyGrid());
@@ -965,7 +1111,6 @@ const BlockBlast = () => {
     setSelectedIndex(0);
     setHoverCell(null);
     setDragging(null);
-    setDragPosition(null);
     setScore(0);
     scoreRef.current = 0;
     setComboStreak(0);
@@ -1085,6 +1230,10 @@ const BlockBlast = () => {
                     const grabOffsetY = pieceHeight / 2;
                     const startLeft = trayRect.left;
                     const startTop = trayRect.top - baseLift;
+                    const distance = event.clientY - boardRect.top;
+                    const clamped = Math.min(Math.max(distance, 0), liftRange);
+                    const extraLift = maxLift * (1 - clamped / liftRange);
+                    const top = startTop - extraLift;
                     setSelectedIndex(index);
                     dragPointerRef.current = { x: event.clientX, y: event.clientY };
                     setDragging({
@@ -1095,15 +1244,13 @@ const BlockBlast = () => {
                       startY: event.clientY,
                       startLeft,
                       startTop,
+                      initialLeft: startLeft,
+                      initialTop: top,
                       boardRect,
                       cellSize,
                       previewThreshold,
                     });
-                    const distance = event.clientY - boardRect.top;
-                    const clamped = Math.min(Math.max(distance, 0), liftRange);
-                    const extraLift = maxLift * (1 - clamped / liftRange);
-                    const top = startTop - extraLift;
-                    setDragPosition({ left: startLeft, top });
+                    updateDragGhostPosition(startLeft, top);
                     lastDragPosRef.current = { left: startLeft, top };
                     const pieceRect = {
                       left: startLeft,
@@ -1112,7 +1259,7 @@ const BlockBlast = () => {
                       bottom: top + pieceHeight,
                     };
                     const proximity = distanceBetweenRects(boardRect, pieceRect);
-                      const initialPlacement =
+                    const initialPlacement =
                       proximity <= previewThreshold
                         ? getSnappedPlacement(
                             grid,
@@ -1143,11 +1290,10 @@ const BlockBlast = () => {
                       startY: event.clientY,
                       startLeft,
                       startTop,
+                      initialLeft: startLeft,
+                      initialTop: startTop,
                     });
-                    setDragPosition({
-                      left: startLeft,
-                      top: startTop,
-                    });
+                    updateDragGhostPosition(startLeft, startTop);
                     lastDragPosRef.current = { left: startLeft, top: startTop };
                     lastPlacementRef.current = null;
                   }
@@ -1166,11 +1312,12 @@ const BlockBlast = () => {
                     }}
                   >
                     {Array.from({ length: piece.width * piece.height }).map((_, cellIndex) => {
-                      const x = cellIndex % piece.width;
-                      const y = Math.floor(cellIndex / piece.width);
-                      const filled = piece.cells.some(
-                        ([cellX, cellY]) => cellX === x && cellY === y
-                      );
+                      const filled =
+                        piece.filled?.[cellIndex] ??
+                        piece.cells.some(
+                          ([cellX, cellY]) =>
+                            cellY * piece.width + cellX === cellIndex
+                        );
                       return (
                         <div
                           key={`${piece.key}-${cellIndex}`}
@@ -1196,12 +1343,14 @@ const BlockBlast = () => {
           Restart
         </button>
       </div>
-      {dragging && dragPosition && activePiece && (
+      {dragging && activePiece && (
         <div
+          ref={dragGhostRef}
           className="bb-drag"
           style={{
-            left: dragPosition.left,
-            top: dragPosition.top,
+            transform: `translate3d(${dragging.initialLeft ?? dragging.startLeft}px, ${
+              dragging.initialTop ?? dragging.startTop
+            }px, 0)`,
           }}
         >
           <div
@@ -1212,11 +1361,12 @@ const BlockBlast = () => {
           >
             {Array.from({ length: activePiece.width * activePiece.height }).map(
               (_, cellIndex) => {
-                const x = cellIndex % activePiece.width;
-                const y = Math.floor(cellIndex / activePiece.width);
-                const filled = activePiece.cells.some(
-                  ([cellX, cellY]) => cellX === x && cellY === y
-                );
+                const filled =
+                  activePiece.filled?.[cellIndex] ??
+                  activePiece.cells.some(
+                    ([cellX, cellY]) =>
+                      cellY * activePiece.width + cellX === cellIndex
+                  );
                 return (
                   <div
                     key={`${activePiece.key}-drag-${cellIndex}`}
