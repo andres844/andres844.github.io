@@ -68,9 +68,9 @@ const PersonalPage = () => {
           viewport={{ once: true }}
           className="mb-16 text-center"
         >
-          <blockquote className="text-2xl font-univers text-gray-300 max-w-2xl mx-auto">
+          <blockquote className="text-2xl italic text-gray-300 max-w-2xl mx-auto">
             "The medium is the message"
-            <footer className="text-base text-gray-400 mt-2">- Marshall McLuhan</footer>
+            <footer className="text-lg mt-2">- Marshall McLuhan</footer>
           </blockquote>
         </motion.div>
 
