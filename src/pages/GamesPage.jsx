@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import AmbientVoidBackground from '../components/AmbientVoidBackground';
-import CursorRipples from '../components/CursorRipples';
 import SectionAccent from '../components/SectionAccent';
 
 const BLOCK_GRID_SIZE = 8;
@@ -264,6 +263,10 @@ const createEmptyGrid = () =>
 const cellBit = (row, col) =>
   1n << BigInt(row * BLOCK_GRID_SIZE + col);
 
+const CELL_MASKS = Array.from({ length: BLOCK_GRID_SIZE * BLOCK_GRID_SIZE }, (_, index) =>
+  1n << BigInt(index)
+);
+
 const ROW_MASKS = Array.from({ length: BLOCK_GRID_SIZE }, (_, row) => {
   let mask = 0n;
   for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
@@ -328,26 +331,46 @@ const SHAPE_PLACEMENTS = SHAPE_LIBRARY.reduce((map, { shape }) => {
   return map;
 }, {});
 
+const SHAPE_PLACEMENT_LOOKUP = Object.entries(SHAPE_PLACEMENTS).reduce(
+  (shapeMap, [shapeId, placements]) => {
+    shapeMap[shapeId] = placements.reduce((placementMap, placement) => {
+      placementMap[`${placement.row}-${placement.col}`] = placement;
+      return placementMap;
+    }, {});
+    return shapeMap;
+  },
+  {}
+);
+
 const distanceBetweenRects = (a, b) => {
   const dx = Math.max(a.left - b.right, 0, b.left - a.right);
   const dy = Math.max(a.top - b.bottom, 0, b.top - a.bottom);
   return Math.hypot(dx, dy);
 };
 
-const canPlacePiece = (grid, piece, row, col) =>
-  piece.cells.every(([x, y]) => {
-    const targetRow = row + y;
-    const targetCol = col + x;
-    if (
-      targetRow < 0 ||
-      targetRow >= BLOCK_GRID_SIZE ||
-      targetCol < 0 ||
-      targetCol >= BLOCK_GRID_SIZE
-    ) {
-      return false;
-    }
-    return !grid[targetRow][targetCol];
-  });
+const getPlacementAt = (piece, row, col) => {
+  if (!piece) return null;
+  const maxRow = BLOCK_GRID_SIZE - piece.height;
+  const maxCol = BLOCK_GRID_SIZE - piece.width;
+  if (row < 0 || row > maxRow || col < 0 || col > maxCol) return null;
+
+  const cached = piece.shapeId
+    ? SHAPE_PLACEMENT_LOOKUP[piece.shapeId]?.[`${row}-${col}`]
+    : null;
+  if (cached) return cached;
+
+  return {
+    row,
+    col,
+    mask: buildPlacementMask(piece, row, col),
+    cellCount: piece.cells.length,
+  };
+};
+
+const canPlacePieceMask = (boardMask, piece, row, col) => {
+  const placement = getPlacementAt(piece, row, col);
+  return placement ? (boardMask & placement.mask) === 0n : false;
+};
 
 const placePiece = (grid, piece, row, col) => {
   const next = grid.map((line) => line.slice());
@@ -517,8 +540,7 @@ const generatePieceSet = (grid, palette = BLOCK_COLORS) => {
   return picks;
 };
 
-const hasMove = (grid, pieces) => {
-  const boardMask = gridToMask(grid);
+const hasMoveForMask = (boardMask, pieces) => {
   return pieces.some((piece) => {
     if (!piece) return false;
 
@@ -529,7 +551,7 @@ const hasMove = (grid, pieces) => {
 
     for (let row = 0; row < BLOCK_GRID_SIZE; row += 1) {
       for (let col = 0; col < BLOCK_GRID_SIZE; col += 1) {
-        if (canPlacePiece(grid, piece, row, col)) {
+        if (canPlacePieceMask(boardMask, piece, row, col)) {
           return true;
         }
       }
@@ -539,7 +561,7 @@ const hasMove = (grid, pieces) => {
 };
 
 const getSnappedPlacement = (
-  grid,
+  boardMask,
   piece,
   board,
   pieceLeft,
@@ -560,8 +582,9 @@ const getSnappedPlacement = (
   const baseRow = Math.min(Math.max(Math.round(rawRow), 0), maxRow);
   const baseCol = Math.min(Math.max(Math.round(rawCol), 0), maxCol);
 
-  if (canPlacePiece(grid, piece, baseRow, baseCol)) {
-    return { row: baseRow, col: baseCol };
+  const basePlacement = getPlacementAt(piece, baseRow, baseCol);
+  if (basePlacement && (boardMask & basePlacement.mask) === 0n) {
+    return basePlacement;
   }
 
   let best = null;
@@ -571,11 +594,12 @@ const getSnappedPlacement = (
       const row = baseRow + dr;
       const col = baseCol + dc;
       if (row < 0 || row > maxRow || col < 0 || col > maxCol) continue;
-      if (!canPlacePiece(grid, piece, row, col)) continue;
+      const placement = getPlacementAt(piece, row, col);
+      if (!placement || (boardMask & placement.mask) !== 0n) continue;
       const dist = dr * dr + dc * dc;
       if (dist < bestDist) {
         bestDist = dist;
-        best = { row, col };
+        best = placement;
       }
     }
   }
@@ -851,6 +875,179 @@ const TinyRunner = () => {
   );
 };
 
+const getDragLift = (pointerType, cellSize) => {
+  if (pointerType === 'touch') return Math.min(72, cellSize * 1.45);
+  if (pointerType === 'pen') return Math.min(32, cellSize * 0.7);
+  return 0;
+};
+
+const getAcceleratedLogicalTop = (clientY, dragging) => {
+  const pointerTop = clientY - dragging.offsetY;
+  const dy = clientY - dragging.startY;
+  if (dy >= 0) return pointerTop;
+
+  const upwardDistance = -dy;
+  const multiplier = 1.03 + Math.min(0.58, upwardDistance / 260);
+  return dragging.startLogicalTop + dy * multiplier;
+};
+
+const BoardCell = React.memo(({ cell, isPreview, previewColor, popColor }) => {
+  const isPop = Boolean(popColor);
+  const isFilled = Boolean(cell || isPreview || popColor);
+  const isGhost = Boolean(isPreview && !cell && !isPop);
+  const colorClass = cell || (isPreview ? previewColor : '') || popColor || '';
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`bb-cell ${isFilled ? 'bb-cell--filled' : 'bb-cell--empty'} ${
+        isGhost ? 'bb-cell--ghost' : ''
+      } ${isPop ? 'bb-cell--pop' : ''} ${colorClass}`}
+    />
+  );
+});
+
+BoardCell.displayName = 'BoardCell';
+
+const BlockBoard = React.memo(
+  React.forwardRef(
+    ({ grid, previewMask, previewColor, popCells, gameOver, comboToast, onReset }, boardRef) => (
+      <div className="bb-board">
+        <div
+          className="bb-grid"
+          style={{
+            gridTemplateColumns: `repeat(${BLOCK_GRID_SIZE}, var(--bb-cell-size))`,
+          }}
+          ref={boardRef}
+          role="grid"
+          aria-label="Block Blast board"
+        >
+          {grid.map((row, rowIndex) =>
+            row.map((cell, colIndex) => {
+              const key = `${rowIndex}-${colIndex}`;
+              const cellMask = CELL_MASKS[rowIndex * BLOCK_GRID_SIZE + colIndex];
+              const isPreview = previewMask !== 0n && (previewMask & cellMask) !== 0n;
+              return (
+                <BoardCell
+                  key={key}
+                  cell={cell}
+                  isPreview={isPreview}
+                  previewColor={previewColor}
+                  popColor={popCells?.[key]}
+                />
+              );
+            })
+          )}
+        </div>
+        {gameOver && (
+          <div className="bb-overlay">
+            <div className="bb-overlay__lines" aria-hidden="true">
+              <span className="bb-overlay__line bb-overlay__line--forward" />
+              <span className="bb-overlay__line bb-overlay__line--back" />
+            </div>
+            <button
+              type="button"
+              onClick={onReset}
+              className="bb-overlay__button rounded-xl border border-red-300/40 bg-red-500/20 px-5 py-2 text-xs uppercase tracking-[0.35em] text-red-100 hover:bg-red-500/30"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {comboToast && (
+          <div key={comboToast.id} className="bb-combo-toast" aria-live="polite">
+            <span className="bb-combo-toast__badge">Combo</span>
+            <span className="bb-combo-toast__text">x{comboToast.comboLevel}</span>
+            {comboToast.linesCleared > 1 && (
+              <span className="bb-combo-toast__lines">
+                {comboToast.linesCleared} lines
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  )
+);
+
+BlockBoard.displayName = 'BlockBoard';
+
+const PieceGrid = React.memo(({ piece, dragKey = '' }) => (
+  <div
+    className="bb-grid bb-piece-grid"
+    style={{
+      gridTemplateColumns: `repeat(${piece.width}, var(--bb-cell-size))`,
+    }}
+  >
+    {piece.filled.map((filled, cellIndex) => (
+      <div
+        key={`${piece.key}${dragKey}-${cellIndex}`}
+        className={`bb-cell ${filled ? 'bb-cell--filled' : 'bb-cell--empty'} ${
+          filled ? piece.color : ''
+        }`}
+      />
+    ))}
+  </div>
+));
+
+PieceGrid.displayName = 'PieceGrid';
+
+const PieceButton = React.memo(
+  ({ piece, index, isActive, isDragging, gameOver, onSelect, onPointerDown }) => (
+    <button
+      type="button"
+      onClick={() => onSelect(index)}
+      onPointerDown={(event) => onPointerDown(event, index, piece)}
+      disabled={!piece || gameOver}
+      className={`bb-piece ${isActive ? 'bb-piece--active' : ''} ${
+        isDragging ? 'bb-piece--dragging' : ''
+      } ${piece ? '' : 'opacity-40'}`}
+      aria-pressed={isActive}
+    >
+      {piece ? <PieceGrid piece={piece} /> : <div className="bb-piece-empty" />}
+    </button>
+  )
+);
+
+PieceButton.displayName = 'PieceButton';
+
+const PieceTray = React.memo(
+  ({ pieces, activeIndex, draggingIndex, gameOver, onSelect, onPointerDown }) => (
+    <div className="flex w-full flex-wrap items-center justify-center gap-4">
+      {pieces.map((piece, index) => (
+        <PieceButton
+          key={piece?.key ?? `empty-${index}`}
+          piece={piece}
+          index={index}
+          isActive={Boolean(index === activeIndex && piece)}
+          isDragging={draggingIndex === index}
+          gameOver={gameOver}
+          onSelect={onSelect}
+          onPointerDown={onPointerDown}
+        />
+      ))}
+    </div>
+  )
+);
+
+PieceTray.displayName = 'PieceTray';
+
+const DragGhost = React.memo(
+  React.forwardRef(({ piece, initialLeft, initialTop }, dragGhostRef) => (
+    <div
+      ref={dragGhostRef}
+      className="bb-drag"
+      style={{
+        transform: `translate3d(${initialLeft}px, ${initialTop}px, 0)`,
+      }}
+    >
+      <PieceGrid piece={piece} dragKey="-drag" />
+    </div>
+  ))
+);
+
+DragGhost.displayName = 'DragGhost';
+
 const BlockBlast = () => {
   const boardRef = useRef(null);
   const [grid, setGrid] = useState(createEmptyGrid);
@@ -890,6 +1087,9 @@ const BlockBlast = () => {
 
   const activeIndex = dragging ? dragging.index : selectedIndex;
   const activePiece = activeIndex !== null ? pieces[activeIndex] : null;
+  const boardMask = useMemo(() => gridToMask(grid), [grid]);
+  const previewMask = dragging && hoverCell && !gameOver ? hoverCell.mask : 0n;
+  const previewColor = previewMask !== 0n ? activePiece?.color ?? '' : '';
 
   useEffect(() => {
     if (selectedIndex !== null && pieces[selectedIndex]) return;
@@ -912,16 +1112,6 @@ const BlockBlast = () => {
     []
   );
 
-  const previewCells = useMemo(() => {
-    if (!dragging || !activePiece || !hoverCell || gameOver) return null;
-    if (!canPlacePiece(grid, activePiece, hoverCell.row, hoverCell.col)) return null;
-    return new Set(
-      activePiece.cells.map(
-        ([x, y]) => `${hoverCell.row + y}-${hoverCell.col + x}`
-      )
-    );
-  }, [activePiece, dragging, hoverCell, grid, gameOver]);
-
   const updateDragGhostPosition = useCallback((left, top) => {
     if (!dragGhostRef.current) return;
     dragGhostRef.current.style.transform = `translate3d(${left}px, ${top}px, 0)`;
@@ -931,9 +1121,11 @@ const BlockBlast = () => {
     (pieceIndex, row, col) => {
       const piece = pieces[pieceIndex];
       if (!piece || gameOver) return false;
-      if (!canPlacePiece(grid, piece, row, col)) return false;
+      const placement = getPlacementAt(piece, row, col);
+      if (!placement || (boardMask & placement.mask) !== 0n) return false;
 
       const placed = placePiece(grid, piece, row, col);
+      const clearedMask = clearLinesMask(boardMask | placement.mask).mask;
       const { grid: cleared, linesCleared, clearedRows, clearedCols } = clearLines(placed);
       let nextStreak = comboRef.current;
       let comboLevel = 0;
@@ -1002,14 +1194,14 @@ const BlockBlast = () => {
       setPieces(nextPieces);
       setHoverCell(null);
 
-      if (!hasMove(cleared, nextPieces)) {
+      if (!hasMoveForMask(clearedMask, nextPieces)) {
         setGameOver(true);
         setBest((prev) => Math.max(prev, nextScore));
       }
 
       return true;
     },
-    [cycleTheme, gameOver, grid, pieces]
+    [boardMask, cycleTheme, gameOver, grid, pieces]
   );
 
   useEffect(() => {
@@ -1022,32 +1214,31 @@ const BlockBlast = () => {
       if (rect.width === 0 || rect.height === 0) return null;
       const cellSize = dragging.cellSize ?? rect.width / BLOCK_GRID_SIZE;
       const previewThreshold = dragging.previewThreshold ?? cellSize * 2.2;
-      const liftRange = 240;
-      const maxLift = 140;
-      const baseLift = 48;
-      const speedUp = 1.4;
-      const speedDown = 1.0;
-      const distance = clientY - rect.top;
-      const clamped = Math.min(Math.max(distance, 0), liftRange);
-      const extraLift = maxLift * (1 - clamped / liftRange);
-      const dy = clientY - dragging.startY;
-      const adjustedY = dy < 0 ? dy * speedUp : dy * speedDown;
-      const left = clientX - dragging.offsetX;
-      let top = dragging.startTop + adjustedY - extraLift;
-      const minTop = clientY - dragging.offsetY - baseLift;
-      if (top > minTop) top = minTop;
+      const logicalLeft = clientX - dragging.offsetX;
+      const logicalTop = getAcceleratedLogicalTop(clientY, dragging);
+      const visualLeft = logicalLeft;
+      const visualTop = logicalTop - (dragging.lift ?? 0);
       const pieceRect = {
-        left,
-        top,
-        right: left + activePiece.width * cellSize,
-        bottom: top + activePiece.height * cellSize,
+        left: logicalLeft,
+        top: logicalTop,
+        right: logicalLeft + activePiece.width * cellSize,
+        bottom: logicalTop + activePiece.height * cellSize,
       };
       const proximity = distanceBetweenRects(rect, pieceRect);
       const placement =
         proximity <= previewThreshold
-          ? getSnappedPlacement(grid, activePiece, board, left, top, 2, 1, rect)
+          ? getSnappedPlacement(
+              boardMask,
+              activePiece,
+              board,
+              logicalLeft,
+              logicalTop,
+              2,
+              1,
+              rect
+            )
           : null;
-      return { left, top, placement };
+      return { left: visualLeft, top: visualTop, placement };
     };
 
     const handleMove = (event) => {
@@ -1090,7 +1281,7 @@ const BlockBlast = () => {
       lastDragPosRef.current = null;
     };
 
-    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointermove', handleMove, { passive: true });
     window.addEventListener('pointerup', handleUp);
     window.addEventListener('pointercancel', handleUp);
 
@@ -1103,11 +1294,12 @@ const BlockBlast = () => {
         dragRafRef.current = 0;
       }
     };
-  }, [activePiece, commitPlacement, dragging, grid, updateDragGhostPosition]);
+  }, [activePiece, boardMask, commitPlacement, dragging, updateDragGhostPosition]);
 
-  const reset = () => {
-    setGrid(createEmptyGrid());
-    setPieces(generatePieceSet(createEmptyGrid(), COLOR_THEMES[0]?.palette ?? BLOCK_COLORS));
+  const reset = useCallback(() => {
+    const emptyGrid = createEmptyGrid();
+    setGrid(emptyGrid);
+    setPieces(generatePieceSet(emptyGrid, COLOR_THEMES[0]?.palette ?? BLOCK_COLORS));
     setSelectedIndex(0);
     setHoverCell(null);
     setDragging(null);
@@ -1124,7 +1316,112 @@ const BlockBlast = () => {
     themeRef.current = 0;
     setCounterRef.current = 0;
     setGameOver(false);
-  };
+  }, []);
+
+  const handleSelectPiece = useCallback(
+    (index) => {
+      if (!pieces[index] || gameOver) return;
+      setSelectedIndex(index);
+    },
+    [gameOver, pieces]
+  );
+
+  const handlePiecePointerDown = useCallback(
+    (event, index, piece) => {
+      if (!piece || gameOver) return;
+      event.preventDefault();
+
+      const gridElement = event.currentTarget.querySelector('.bb-piece-grid');
+      if (!gridElement) return;
+
+      const pieceRect = gridElement.getBoundingClientRect();
+      const board = boardRef.current;
+      setSelectedIndex(index);
+      dragPointerRef.current = { x: event.clientX, y: event.clientY };
+
+      if (!board) {
+        const offsetX = event.clientX - pieceRect.left;
+        const offsetY = event.clientY - pieceRect.top;
+        const initialLeft = event.clientX - offsetX;
+        const initialTop = event.clientY - offsetY;
+        setDragging({
+          index,
+          offsetX,
+          offsetY,
+          lift: 0,
+          startY: event.clientY,
+          startLogicalTop: initialTop,
+          initialLeft,
+          initialTop,
+        });
+        updateDragGhostPosition(initialLeft, initialTop);
+        lastDragPosRef.current = { left: initialLeft, top: initialTop };
+        lastPlacementRef.current = null;
+        return;
+      }
+
+      const boardRect = board.getBoundingClientRect();
+      const cellSize = boardRect.width / BLOCK_GRID_SIZE;
+      const previewThreshold = cellSize * 2.2;
+      const renderedWidth = Math.max(1, pieceRect.width);
+      const renderedHeight = Math.max(1, pieceRect.height);
+      const pieceWidth = piece.width * cellSize;
+      const pieceHeight = piece.height * cellSize;
+      const offsetX = Math.min(
+        Math.max((event.clientX - pieceRect.left) * (pieceWidth / renderedWidth), 0),
+        pieceWidth
+      );
+      const offsetY = Math.min(
+        Math.max((event.clientY - pieceRect.top) * (pieceHeight / renderedHeight), 0),
+        pieceHeight
+      );
+      const lift = getDragLift(event.pointerType, cellSize);
+      const logicalLeft = event.clientX - offsetX;
+      const logicalTop = event.clientY - offsetY;
+      const initialLeft = logicalLeft;
+      const initialTop = logicalTop - lift;
+
+      setDragging({
+        index,
+        offsetX,
+        offsetY,
+        lift,
+        startY: event.clientY,
+        startLogicalTop: logicalTop,
+        initialLeft,
+        initialTop,
+        boardRect,
+        cellSize,
+        previewThreshold,
+      });
+      updateDragGhostPosition(initialLeft, initialTop);
+      lastDragPosRef.current = { left: initialLeft, top: initialTop };
+
+      const logicalRect = {
+        left: logicalLeft,
+        top: logicalTop,
+        right: logicalLeft + pieceWidth,
+        bottom: logicalTop + pieceHeight,
+      };
+      const proximity = distanceBetweenRects(boardRect, logicalRect);
+      const initialPlacement =
+        proximity <= previewThreshold
+          ? getSnappedPlacement(
+              boardMask,
+              piece,
+              board,
+              logicalLeft,
+              logicalTop,
+              2,
+              1,
+              boardRect
+            )
+          : null;
+      setHoverCell(initialPlacement);
+      lastPlacementRef.current = initialPlacement;
+    },
+    [boardMask, gameOver, updateDragGhostPosition]
+  );
 
   return (
     <div className="space-y-4" style={{ '--bb-cell-size': 'clamp(30px, 6vw, 46px)' }}>
@@ -1137,204 +1434,24 @@ const BlockBlast = () => {
         {gameOver && <span className="bb-score-pill">No moves</span>}
       </div>
       <div className="flex flex-col items-center gap-5">
-        <div className="bb-board">
-          <div
-            className="bb-grid"
-            style={{
-              gridTemplateColumns: `repeat(${BLOCK_GRID_SIZE}, var(--bb-cell-size))`,
-            }}
-            ref={boardRef}
-          >
-            {grid.map((row, rowIndex) =>
-              row.map((cell, colIndex) => {
-                const key = `${rowIndex}-${colIndex}`;
-                const isPreview = previewCells?.has(key);
-                const popColor = popCells?.[key];
-                const isPop = Boolean(popColor);
-                const isFilled = Boolean(cell || isPreview || popColor);
-                const isGhost = Boolean(isPreview && !cell && !isPop);
-                const colorClass =
-                  cell || (isPreview ? activePiece?.color : '') || popColor || '';
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    aria-label={`Row ${rowIndex + 1} column ${colIndex + 1}`}
-                    disabled={!activePiece || gameOver}
-                    className={`bb-cell ${
-                      isFilled ? 'bb-cell--filled' : 'bb-cell--empty'
-                    } ${isGhost ? 'bb-cell--ghost' : ''} ${
-                      isPop ? 'bb-cell--pop' : ''
-                    } ${colorClass}`}
-                  />
-                );
-              })
-            )}
-          </div>
-          {gameOver && (
-            <div className="bb-overlay">
-              <div className="bb-overlay__lines" aria-hidden="true">
-                <span className="bb-overlay__line bb-overlay__line--forward" />
-                <span className="bb-overlay__line bb-overlay__line--back" />
-              </div>
-              <button
-                type="button"
-                onClick={reset}
-                className="bb-overlay__button rounded-xl border border-red-300/40 bg-red-500/20 px-5 py-2 text-xs uppercase tracking-[0.35em] text-red-100 hover:bg-red-500/30"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          {comboToast && (
-            <div key={comboToast.id} className="bb-combo-toast" aria-live="polite">
-              <span className="bb-combo-toast__badge">Combo</span>
-              <span className="bb-combo-toast__text">x{comboToast.comboLevel}</span>
-              {comboToast.linesCleared > 1 && (
-                <span className="bb-combo-toast__lines">
-                  {comboToast.linesCleared} lines
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="flex w-full flex-wrap items-center justify-center gap-4">
-          {pieces.map((piece, index) => {
-            const isActive = index === activeIndex && piece;
-            return (
-              <button
-                key={piece?.key ?? `empty-${index}`}
-                type="button"
-                onClick={() => {
-                  if (!piece || gameOver) return;
-                  setSelectedIndex(index);
-                }}
-                onPointerDown={(event) => {
-                  if (!piece || gameOver) return;
-                  event.preventDefault();
-                  const gridElement = event.currentTarget.querySelector('.bb-piece-grid');
-                  if (!gridElement) return;
-                  const rect = gridElement.getBoundingClientRect();
-                  const board = boardRef.current;
-                  if (board) {
-                    const boardRect = board.getBoundingClientRect();
-                    const liftRange = 240;
-                    const maxLift = 140;
-                    const baseLift = 48;
-                    const cellSize = boardRect.width / BLOCK_GRID_SIZE;
-                    const previewThreshold = cellSize * 2.2;
-                    const trayRect = rect;
-                    const pieceWidth = piece.width * cellSize;
-                    const pieceHeight = piece.height * cellSize;
-                    const grabOffsetX = pieceWidth / 2;
-                    const grabOffsetY = pieceHeight / 2;
-                    const startLeft = trayRect.left;
-                    const startTop = trayRect.top - baseLift;
-                    const distance = event.clientY - boardRect.top;
-                    const clamped = Math.min(Math.max(distance, 0), liftRange);
-                    const extraLift = maxLift * (1 - clamped / liftRange);
-                    const top = startTop - extraLift;
-                    setSelectedIndex(index);
-                    dragPointerRef.current = { x: event.clientX, y: event.clientY };
-                    setDragging({
-                      index,
-                      offsetX: grabOffsetX,
-                      offsetY: grabOffsetY,
-                      startX: event.clientX,
-                      startY: event.clientY,
-                      startLeft,
-                      startTop,
-                      initialLeft: startLeft,
-                      initialTop: top,
-                      boardRect,
-                      cellSize,
-                      previewThreshold,
-                    });
-                    updateDragGhostPosition(startLeft, top);
-                    lastDragPosRef.current = { left: startLeft, top };
-                    const pieceRect = {
-                      left: startLeft,
-                      top,
-                      right: startLeft + pieceWidth,
-                      bottom: top + pieceHeight,
-                    };
-                    const proximity = distanceBetweenRects(boardRect, pieceRect);
-                    const initialPlacement =
-                      proximity <= previewThreshold
-                        ? getSnappedPlacement(
-                            grid,
-                            piece,
-                            board,
-                            startLeft,
-                            top,
-                            2,
-                            1,
-                            boardRect
-                          )
-                        : null;
-                    setHoverCell(initialPlacement);
-                    lastPlacementRef.current = initialPlacement;
-                  } else {
-                    const baseLift = 48;
-                    const grabOffsetX = rect.width / 2;
-                    const grabOffsetY = rect.height / 2;
-                    const startLeft = rect.left;
-                    const startTop = rect.top - baseLift;
-                    setSelectedIndex(index);
-                    dragPointerRef.current = { x: event.clientX, y: event.clientY };
-                    setDragging({
-                      index,
-                      offsetX: grabOffsetX,
-                      offsetY: grabOffsetY,
-                      startX: event.clientX,
-                      startY: event.clientY,
-                      startLeft,
-                      startTop,
-                      initialLeft: startLeft,
-                      initialTop: startTop,
-                    });
-                    updateDragGhostPosition(startLeft, startTop);
-                    lastDragPosRef.current = { left: startLeft, top: startTop };
-                    lastPlacementRef.current = null;
-                  }
-                }}
-                disabled={!piece || gameOver}
-                className={`bb-piece ${isActive ? 'bb-piece--active' : ''} ${
-                  dragging?.index === index ? 'bb-piece--dragging' : ''
-                } ${piece ? '' : 'opacity-40'}`}
-                aria-pressed={isActive}
-              >
-                {piece ? (
-                  <div
-                    className="bb-grid bb-piece-grid"
-                    style={{
-                      gridTemplateColumns: `repeat(${piece.width}, var(--bb-cell-size))`,
-                    }}
-                  >
-                    {Array.from({ length: piece.width * piece.height }).map((_, cellIndex) => {
-                      const filled =
-                        piece.filled?.[cellIndex] ??
-                        piece.cells.some(
-                          ([cellX, cellY]) =>
-                            cellY * piece.width + cellX === cellIndex
-                        );
-                      return (
-                        <div
-                          key={`${piece.key}-${cellIndex}`}
-                          className={`bb-cell ${
-                            filled ? 'bb-cell--filled' : 'bb-cell--empty'
-                          } ${filled ? piece.color : ''}`}
-                        />
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="bb-piece-empty" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <BlockBoard
+          ref={boardRef}
+          grid={grid}
+          previewMask={previewMask}
+          previewColor={previewColor}
+          popCells={popCells}
+          gameOver={gameOver}
+          comboToast={comboToast}
+          onReset={reset}
+        />
+        <PieceTray
+          pieces={pieces}
+          activeIndex={activeIndex}
+          draggingIndex={dragging?.index ?? null}
+          gameOver={gameOver}
+          onSelect={handleSelectPiece}
+          onPointerDown={handlePiecePointerDown}
+        />
         <button
           type="button"
           onClick={reset}
@@ -1344,294 +1461,21 @@ const BlockBlast = () => {
         </button>
       </div>
       {dragging && activePiece && (
-        <div
+        <DragGhost
           ref={dragGhostRef}
-          className="bb-drag"
-          style={{
-            transform: `translate3d(${dragging.initialLeft ?? dragging.startLeft}px, ${
-              dragging.initialTop ?? dragging.startTop
-            }px, 0)`,
-          }}
-        >
-          <div
-            className="bb-grid bb-piece-grid"
-            style={{
-              gridTemplateColumns: `repeat(${activePiece.width}, var(--bb-cell-size))`,
-            }}
-          >
-            {Array.from({ length: activePiece.width * activePiece.height }).map(
-              (_, cellIndex) => {
-                const filled =
-                  activePiece.filled?.[cellIndex] ??
-                  activePiece.cells.some(
-                    ([cellX, cellY]) =>
-                      cellY * activePiece.width + cellX === cellIndex
-                  );
-                return (
-                  <div
-                    key={`${activePiece.key}-drag-${cellIndex}`}
-                    className={`bb-cell ${
-                      filled ? 'bb-cell--filled' : 'bb-cell--empty'
-                    } ${filled ? activePiece.color : ''}`}
-                  />
-                );
-              }
-            )}
-          </div>
-        </div>
+          piece={activePiece}
+          initialLeft={dragging.initialLeft}
+          initialTop={dragging.initialTop}
+        />
       )}
     </div>
   );
 };
 
-const ReactionPulse = () => {
-  const [phase, setPhase] = useState('idle');
-  const [reaction, setReaction] = useState(null);
-  const [best, setBest] = useState(null);
-  const [message, setMessage] = useState('Click to arm the pulse.');
-  const timeoutRef = useRef(null);
-  const startRef = useRef(0);
-
-  useEffect(() => () => clearTimeout(timeoutRef.current), []);
-
-  const arm = () => {
-    setReaction(null);
-    setPhase('waiting');
-    setMessage('Hold... wait for the glow.');
-    const delay = 800 + Math.random() * 1800;
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      startRef.current = performance.now();
-      setPhase('ready');
-      setMessage('NOW');
-    }, delay);
-  };
-
-  const handleClick = () => {
-    if (phase === 'idle') {
-      arm();
-      return;
-    }
-    if (phase === 'waiting') {
-      clearTimeout(timeoutRef.current);
-      setPhase('idle');
-      setMessage('Too soon. Try again.');
-      return;
-    }
-    if (phase === 'ready') {
-      const time = Math.round(performance.now() - startRef.current);
-      setReaction(time);
-      setBest((prev) => (prev ? Math.min(prev, time) : time));
-      setPhase('idle');
-      setMessage('Click to run it back.');
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <button
-        type="button"
-        onClick={handleClick}
-        className={`w-full rounded-2xl border border-white/10 px-6 py-6 text-center transition-colors ${
-          phase === 'ready' ? 'bg-blue-500/20 text-white' : 'bg-white/5 text-zinc-200'
-        }`}
-      >
-        <div className="text-sm uppercase tracking-[0.35em] text-blue-200">Reaction Pulse</div>
-        <div className="mt-2 text-2xl font-semibold">{message}</div>
-        {reaction !== null && (
-          <div className="mt-2 text-sm text-zinc-300">Last: {reaction} ms</div>
-        )}
-      </button>
-      <div className="flex justify-between text-xs uppercase tracking-widest text-zinc-400">
-        <span>Best: {best ? `${best} ms` : '--'}</span>
-        <span>Tap when it lights</span>
-      </div>
-    </div>
-  );
-};
-
-const AimTrainer = () => {
-  const duration = 15;
-  const [running, setRunning] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(duration);
-  const [score, setScore] = useState(0);
-  const [best, setBest] = useState(0);
-  const [target, setTarget] = useState({ x: 40, y: 40 });
-  const arenaRef = useRef(null);
-
-  const spawnTarget = useCallback(() => {
-    const arena = arenaRef.current;
-    if (!arena) return;
-    const rect = arena.getBoundingClientRect();
-    const size = 38;
-    const pad = 8;
-    const x = pad + Math.random() * Math.max(1, rect.width - size - pad * 2);
-    const y = pad + Math.random() * Math.max(1, rect.height - size - pad * 2);
-    setTarget({ x, y });
-  }, []);
-
-  const start = () => {
-    setScore(0);
-    setTimeLeft(duration);
-    setRunning(true);
-    spawnTarget();
-  };
-
-  useEffect(() => {
-    if (!running) return undefined;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [running]);
-
-  useEffect(() => {
-    if (!running) return;
-    if (timeLeft <= 0) {
-      setRunning(false);
-      setBest((prev) => Math.max(prev, score));
-      setTimeLeft(duration);
-    }
-  }, [timeLeft, running, score]);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between text-xs uppercase tracking-widest text-zinc-400">
-        <span>Score: {score}</span>
-        <span>Best: {best}</span>
-        <span>{running ? `${timeLeft}s` : '15s'}</span>
-      </div>
-      <div
-        ref={arenaRef}
-        className="relative h-44 w-full rounded-2xl border border-white/10 bg-white/5"
-      >
-        {running ? (
-          <button
-            type="button"
-            onClick={() => {
-              setScore((prev) => prev + 1);
-              spawnTarget();
-            }}
-            className="absolute h-10 w-10 rounded-full bg-blue-500/70 shadow-[0_0_24px_rgba(59,130,246,0.45)]"
-            style={{ left: target.x, top: target.y }}
-            aria-label="Target"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-zinc-400">
-            Tap start and chase the dot.
-          </div>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={start}
-        className="w-full rounded-xl border border-white/10 bg-blue-500/20 px-4 py-2 text-sm uppercase tracking-[0.3em] text-blue-100 hover:bg-blue-500/30"
-      >
-        {running ? 'Running' : 'Start'}
-      </button>
-    </div>
-  );
-};
-
-const PulseGrid = () => {
-  const duration = 20;
-  const [running, setRunning] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(duration);
-  const [score, setScore] = useState(0);
-  const [best, setBest] = useState(0);
-  const [active, setActive] = useState(null);
-  const hopRef = useRef(null);
-  const tickRef = useRef(null);
-
-  const start = () => {
-    setScore(0);
-    setTimeLeft(duration);
-    setRunning(true);
-  };
-
-  useEffect(() => {
-    if (!running) return undefined;
-    setActive(Math.floor(Math.random() * 9));
-    hopRef.current = setInterval(() => {
-      setActive(Math.floor(Math.random() * 9));
-    }, 700);
-    tickRef.current = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-    return () => {
-      clearInterval(hopRef.current);
-      clearInterval(tickRef.current);
-    };
-  }, [running]);
-
-  useEffect(() => {
-    if (!running) return;
-    if (timeLeft <= 0) {
-      setRunning(false);
-      setBest((prev) => Math.max(prev, score));
-      setActive(null);
-      setTimeLeft(duration);
-    }
-  }, [timeLeft, running, score]);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between text-xs uppercase tracking-widest text-zinc-400">
-        <span>Score: {score}</span>
-        <span>Best: {best}</span>
-        <span>{running ? `${timeLeft}s` : '20s'}</span>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        {Array.from({ length: 9 }).map((_, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={() => {
-              if (!running || active !== index) return;
-              setScore((prev) => prev + 1);
-              setActive(Math.floor(Math.random() * 9));
-            }}
-            className={`h-16 rounded-2xl border border-white/10 transition-colors ${
-              active === index
-                ? 'bg-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.35)]'
-                : 'bg-white/5'
-            }`}
-            aria-label={`Cell ${index + 1}`}
-          />
-        ))}
-      </div>
-      <button
-        type="button"
-        onClick={start}
-        className="w-full rounded-xl border border-white/10 bg-blue-500/20 px-4 py-2 text-sm uppercase tracking-[0.3em] text-blue-100 hover:bg-blue-500/30"
-      >
-        {running ? 'Running' : 'Start'}
-      </button>
-    </div>
-  );
-};
-
-const GameCard = ({ title, description, children }) => (
-  <motion.article
-    initial={{ opacity: 0, y: 18 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, ease: 'easeOut' }}
-    viewport={{ once: true, amount: 0.3 }}
-    className="glass-card hover-change p-5 rounded-2xl space-y-4"
-  >
-    <div>
-      <h3 className="text-xl font-semibold text-white">{title}</h3>
-      <p className="text-sm text-zinc-400">{description}</p>
-    </div>
-    {children}
-  </motion.article>
-);
-
 const GamesPage = () => {
   return (
     <div className="relative bg-[#040a16] text-white cursor-crosshair">
-      <AmbientVoidBackground />
-      <CursorRipples />
+      <AmbientVoidBackground lightweight />
 
       <div className="relative z-10 pt-16 pb-12">
         <header className="container mx-auto px-4 text-center mb-10">
@@ -1655,7 +1499,7 @@ const GamesPage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
             viewport={{ once: true, amount: 0.3 }}
-            className="glass-card hover-change p-6 rounded-3xl"
+            className="game-shell p-6 rounded-3xl"
           >
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
@@ -1672,7 +1516,7 @@ const GamesPage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
             viewport={{ once: true, amount: 0.3 }}
-            className="glass-card hover-change p-6 rounded-3xl"
+            className="game-shell p-6 rounded-3xl"
           >
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
@@ -1687,26 +1531,6 @@ const GamesPage = () => {
             </div>
           </motion.article>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <GameCard
-              title="Reaction Pulse"
-              description="Test how fast you can catch the signal."
-            >
-              <ReactionPulse />
-            </GameCard>
-            <GameCard
-              title="Aim Trainer"
-              description="Hit as many targets as you can in 15 seconds."
-            >
-              <AimTrainer />
-            </GameCard>
-            <GameCard
-              title="Pulse Grid"
-              description="Tap the lit cell before it jumps."
-            >
-              <PulseGrid />
-            </GameCard>
-          </div>
         </section>
       </div>
     </div>

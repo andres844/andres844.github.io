@@ -7,7 +7,18 @@ import {
   useTransform,
 } from 'framer-motion';
 
-const AmbientVoidBackground = () => {
+const LightweightAmbientBackground = () => (
+  <div
+    className="fixed inset-0 z-0 bg-[#040a16] pointer-events-none"
+    style={{
+      background:
+        'radial-gradient(circle at 0% -8%, rgba(59,130,246,0.42) 0%, rgba(37,99,235,0.20) 32%, rgba(4,10,22,0) 58%), radial-gradient(circle at 92% 82%, rgba(250,204,21,0.32) 0%, rgba(250,204,21,0.12) 30%, rgba(4,10,22,0) 60%), radial-gradient(circle at 50% 35%, rgba(4,10,22,0) 0%, rgba(4,10,22,0.36) 58%, rgba(4,10,22,0.94) 100%), linear-gradient(180deg, #040a16 0%, #071126 54%, #040a16 100%)',
+    }}
+    aria-hidden="true"
+  />
+);
+
+const AnimatedAmbientBackground = () => {
   const prefersReducedMotion = useReducedMotion();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -113,5 +124,8 @@ const AmbientVoidBackground = () => {
     </div>
   );
 };
+
+const AmbientVoidBackground = ({ lightweight = false }) =>
+  lightweight ? <LightweightAmbientBackground /> : <AnimatedAmbientBackground />;
 
 export default AmbientVoidBackground;

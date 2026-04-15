@@ -61,8 +61,7 @@ const Resume = () => {
             <p className="text-xl text-gray-300">UCSB '26</p>
           </div>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            I design and build data products and ML systems with a focus on
-            explainability, performance, and measurable outcomes.
+            Currently exploring full-time roles in applied machine learning, quantitative finance, and data science. This page serves as an interactive resume and portfolio of my work.
           </p>
         </motion.div>
       </header>
@@ -162,18 +161,18 @@ const Resume = () => {
               <h3 className="text-xl ">University of California, Santa Barbara</h3>
               <div className="flex justify-between">
                 <p className="text-gray-300">Bachelor of Science, Statistics & Data Science</p>
-                <p className="text-gray-400">Expected March 2026</p>
+                <p className="text-gray-400">March 2026</p>
               </div>
               <p className="text-gray-300">Bachelor of Arts, Economics</p>
-              <ul className="list-disc list-inside text-gray-300 mt-2">
-                <li className="pl-5 -indent-5">
-                  <span className="font-semibold text-gray-100">Relevant Coursework:</span>{''}
-                  <span className="inline-block align-top -indent-1 ">
-                   Regression Analysis, Time Series Analysis (Grad level), Stochastic Processes I & II, Statistical
-                   Machine Learning I & II, Bayesian Statistics, Data Structures & Algorithms, Game Theory,
-                   Econometrics I & II, Advanced Macro/Micro Economics
-                  </span>
-                </li>
+              <div className="mt-2 text-gray-300">
+                <p className="font-semibold text-gray-100">Relevant Coursework:</p>
+                <p className="pl-5">
+                  Regression Analysis, Time Series Analysis (Grad level), Stochastic Processes I & II (Grad level), Statistical
+                   Machine Learning I & II, Bayesian Statistics, Data Wrangling, Data Structures & Algorithms, Game Theory,
+                   Econometrics I & II, Advanced Macro/Micro Economics, Behavorial Economics
+                </p>
+              </div>
+              <ul className="list-disc list-outside text-gray-300 mt-2 pl-5 space-y-1">
                 <li>NeuroTech club Researcher & Treasurer, Data Science Club member, California Nano Systems Institute Fellowship recipient</li>
                 <li>Major GPA: 3.6, Deans Honors List F2023, W2023</li>
               </ul>
@@ -186,9 +185,10 @@ const Resume = () => {
                 <p className="text-gray-300">Computational Biology</p>
                 <p className="text-gray-400">June 2022</p>
               </div>
-              <ul className="list-disc list-inside text-gray-300 mt-2">
+              <ul className="list-disc list-outside text-gray-300 mt-2 pl-5 space-y-1">
                 <li>Awarded full scholarship to take Computational Biology with Python over summer quarter</li>
                 <li>Experimented with Genome sequencing, wildlife ecology simulations, and epidemiology simulations</li>
+                <li>Modeled biological population dynamics with discrete-time Markov chains, birth-death processes, transition probability matrices, absorbing states, and steady-state behavior</li>
               </ul>
             </div>
           </div>
@@ -219,7 +219,7 @@ const Resume = () => {
                 },
                 {
                   title: 'President - BlockchainUCSB',
-                  dates: 'June 2024 - Current',
+                  dates: 'June 2024 - September 2025',
                   location: 'Santa Barbara, CA',
                   points: [
                     'Led Blockchain Summit (100+ attendees, $10K+ sponsorship) boosting community and funding.',
@@ -275,7 +275,7 @@ const Resume = () => {
                     <p className="text-sm md:text-base text-gray-400">{job.dates}</p>
                   </div>
                   <p className="text-gray-400 mt-1">{job.location}</p>
-                  <ul className="list-disc list-inside text-gray-300 mt-4 space-y-2">
+                  <ul className="list-disc list-outside text-gray-300 mt-4 pl-5 space-y-2">
                     {job.points.map((point, i) => (
                       <li key={i}>{point}</li>
                     ))}
@@ -297,17 +297,17 @@ const Resume = () => {
               </p>
             </div>
             <div className="space-y-6">
-              {[
-                {
-                  title: 'Time Series Forecasting',
-                  description: 'Extensively analyzed and forecasted weather time-series data using ARIMA and SARIMA models, leveraging R (including the forecast package for automatic ARIMA and state-space exponential smoothing) for model selection and diagnostics (ACF/PACF, stationarity tests), and presented insights through custom visualizations',
-                  tags: ['R Studio', 'ggplot2', 'auto.arima'],
-                },
-                {
-                  title: 'Quantitative Backtesting Framework',
-                  description: 'Implemented Monte Carlo simulation-driven backtesting with 10,000 step walk-forward optimization, leveraging Python, statistical resampling (e.g., bootstrapping/permutation testing), dynamic risk-adjusted performance metrics, and visualizations to evaluate strategy robustness across multiple market regimes.',
-                  tags: ['Scikit Learn', 'Random Forest', 'Donchian Breakout Strategy'],
-                },
+	              {[
+	                {
+	                  title: 'Quantitative Backtesting Framework',
+	                  description: 'Built a modular SPY strategy research framework across daily, weekly, and monthly bars (2000-2024), testing Donchian breakout, Bollinger mean-reversion, Decision Tree/Random Forest baselines, and PyTorch TCN/LSTM sequence models. Evaluated Profit Factor net of turnover costs with walk-forward validation, stationary block bootstraps, bar-permutation nulls, calendar shuffles, sign-flip tests, empirical p-values, volatility-normalized signals, and capped Kelly sizing via MC-Dropout and dual-head return estimates.',
+	                  tags: ['PyTorch', 'Scikit Learn', 'Pandas', 'Bootstrapping', 'TCN/LSTM'],
+	                },
+	                {
+	                  title: 'Time Series Forecasting',
+	                  description: 'Extensively analyzed and forecasted weather time-series data using ARIMA and SARIMA models, leveraging R (including the forecast package for automatic ARIMA and state-space exponential smoothing) for model selection and diagnostics (ACF/PACF, stationarity tests), and presented insights through custom visualizations',
+	                  tags: ['R Studio', 'ggplot2', 'auto.arima'],
+	                },
                 {
                   title: 'Volatility Surface Visualization',
                   description:
