@@ -608,6 +608,111 @@ const getSnappedPlacement = (
   return bestDist <= maxDistance * maxDistance ? best : null;
 };
 
+const RUNNER_CELL_SIZE = 32;
+const RUNNER_JUMP_ROTATION_DEGREES = 180;
+const RUNNER_THEME_CYCLE_EVERY = 4;
+const RUNNER_JUMP_BUFFER_FRAMES = 7;
+const RUNNER_COYOTE_FRAMES = 5;
+const RUNNER_LOW_JUMP_GRAVITY_MULTIPLIER = 1.35;
+const RUNNER_SHORT_JUMP_VELOCITY = -10.5;
+const RUNNER_RELEASE_VELOCITY = -9.2;
+const RUNNER_CHAIN_JUMP_FRAMES = 28.6;
+const RUNNER_CHAIN_SPEED_LEAD = 0.1;
+const RUNNER_SECTION_GAP = 270;
+const RUNNER_SECTION_GAP_RANDOM = 50;
+const RUNNER_TOP_LANDING_TOLERANCE = 18;
+
+const RUNNER_CHALLENGES = [
+  {
+    id: 'single-hop',
+    minScore: 0,
+    weight: 3,
+    pieces: [{ type: 'block', widthCells: 1, heightCells: 1, offset: 0 }],
+  },
+  {
+    id: 'two-high',
+    minScore: 4,
+    weight: 2,
+    pieces: [{ type: 'block', widthCells: 1, heightCells: 2, offset: 0 }],
+  },
+  {
+    id: 'staircase',
+    minScore: 8,
+    weight: 4,
+    pieces: [
+      { type: 'block', widthCells: 1, heightCells: 1, chainStep: 0 },
+      { type: 'block', widthCells: 1, heightCells: 2, chainStep: 1 },
+      { type: 'block', widthCells: 1, heightCells: 3, chainStep: 2 },
+    ],
+  },
+  {
+    id: 'spike-pad',
+    minScore: 12,
+    weight: 2,
+    pieces: [
+      { type: 'spike', widthCells: 1, heightCells: 1, offset: 0 },
+      { type: 'block', widthCells: 1, heightCells: 1, offset: 156 },
+      { type: 'spike', widthCells: 1, heightCells: 1, offset: 312 },
+    ],
+  },
+  {
+    id: 'platform-run',
+    minScore: 18,
+    weight: 2,
+    pieces: [
+      { type: 'block', widthCells: 3, heightCells: 1, offset: 0 },
+      { type: 'spike', widthCells: 1, heightCells: 1, offset: 208 },
+      { type: 'block', widthCells: 1, heightCells: 2, offset: 362 },
+    ],
+  },
+  {
+    id: 'split-stairs',
+    minScore: 28,
+    weight: 2,
+    pieces: [
+      { type: 'block', widthCells: 2, heightCells: 1, chainStep: 0 },
+      { type: 'block', widthCells: 1, heightCells: 2, chainStep: 1 },
+      { type: 'block', widthCells: 2, heightCells: 3, chainStep: 2 },
+    ],
+  },
+];
+
+const RUNNER_OPENING_SEQUENCE = ['single-hop', 'two-high', 'staircase'];
+
+const getRunnerPalette = (themeIndex) =>
+  COLOR_THEMES[themeIndex]?.palette ?? BLOCK_COLORS;
+
+const getRunnerSpecWidth = (spec) =>
+  (spec.widthCells ?? 1) * RUNNER_CELL_SIZE;
+
+const getRunnerSpecHeight = (spec) =>
+  (spec.heightCells ?? 1) * RUNNER_CELL_SIZE;
+
+const getRunnerPieceOffset = (piece, speed) =>
+  piece.offset ??
+  Math.round(piece.chainStep * RUNNER_CHAIN_JUMP_FRAMES * (speed + RUNNER_CHAIN_SPEED_LEAD));
+
+const pickRunnerChallenge = (score, challengeIndex) => {
+  const scriptedId = RUNNER_OPENING_SEQUENCE[challengeIndex];
+  const scripted = scriptedId
+    ? RUNNER_CHALLENGES.find((challenge) => challenge.id === scriptedId)
+    : null;
+  if (scripted) return scripted;
+
+  const unlocked = RUNNER_CHALLENGES.filter((challenge) => score >= challenge.minScore);
+  const pool = unlocked.length ? unlocked : [RUNNER_CHALLENGES[0]];
+  const totalWeight = pool.reduce((sum, challenge) => sum + challenge.weight, 0);
+  let roll = Math.random() * totalWeight;
+  for (let i = 0; i < pool.length; i += 1) {
+    roll -= pool[i].weight;
+    if (roll <= 0) return pool[i];
+  }
+  return pool[pool.length - 1];
+};
+
+const rectanglesOverlap = (a, b) =>
+  a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+
 const TinyRunner = () => {
   const arenaHeight = 200;
   const groundOffset = 30;
@@ -615,7 +720,7 @@ const TinyRunner = () => {
   const playerX = 52;
   const gravity = 0.9;
   const jumpVelocity = -13;
-  const speed = 6.2;
+  const baseSpeed = 5.9;
 
   const arenaRef = useRef(null);
   const widthRef = useRef(720);
@@ -625,17 +730,27 @@ const TinyRunner = () => {
   const playerRef = useRef({ y: 0, vy: 0, grounded: true });
   const rotationRef = useRef(0);
   const rotationActiveRef = useRef(false);
+  const jumpStartRotationRef = useRef(0);
   const airTimeRef = useRef(0);
   const jumpDurationRef = useRef((2 * Math.abs(jumpVelocity)) / gravity);
   const spawnRef = useRef(0);
   const nextSpawnRef = useRef(70);
   const scoreRef = useRef(0);
+  const themeIndexRef = useRef(0);
+  const challengeIndexRef = useRef(0);
+  const jumpBufferRef = useRef(0);
+  const jumpHeldRef = useRef(false);
+  const coyoteRef = useRef(RUNNER_COYOTE_FRAMES);
 
   const [running, setRunning] = useState(false);
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
   const [status, setStatus] = useState('Tap start or press space.');
-  const [frame, setFrame] = useState({ playerY: 0, obstacles: [], rotation: 0 });
+  const [frame, setFrame] = useState({
+    playerY: 0,
+    obstacles: [],
+    rotation: 0,
+  });
 
   const groundTop = arenaHeight - groundOffset;
   const floorY = groundTop - playerSize;
@@ -644,25 +759,56 @@ const TinyRunner = () => {
     playerRef.current = { y: floorY, vy: 0, grounded: true };
     rotationRef.current = 0;
     rotationActiveRef.current = false;
+    jumpStartRotationRef.current = 0;
     airTimeRef.current = 0;
     obstaclesRef.current = [];
     spawnRef.current = 0;
-    nextSpawnRef.current = 60 + Math.random() * 60;
+    nextSpawnRef.current = 44;
     scoreRef.current = 0;
+    themeIndexRef.current = 0;
+    challengeIndexRef.current = 0;
+    jumpBufferRef.current = 0;
+    jumpHeldRef.current = false;
+    coyoteRef.current = RUNNER_COYOTE_FRAMES;
     setScore(0);
     setFrame({ playerY: floorY, obstacles: [], rotation: 0 });
   }, [floorY]);
 
-  const spawnObstacle = useCallback(() => {
-    const isSpike = Math.random() < 0.65;
-    const height = isSpike ? 24 + Math.random() * 20 : 18 + Math.random() * 26;
-    const width = isSpike ? height : 14 + Math.random() * 18;
-    obstaclesRef.current.push({
-      x: widthRef.current + 20,
-      width,
-      height,
-      type: isSpike ? 'spike' : 'block',
+  const spawnChallenge = useCallback((speed) => {
+    const challengeNumber = challengeIndexRef.current;
+    if (challengeNumber > 0 && challengeNumber % RUNNER_THEME_CYCLE_EVERY === 0) {
+      themeIndexRef.current = (themeIndexRef.current + 1) % COLOR_THEMES.length;
+    }
+
+    const challenge = pickRunnerChallenge(scoreRef.current, challengeNumber);
+    const palette = getRunnerPalette(themeIndexRef.current);
+    const spawnX = widthRef.current + 4;
+    const obstacles = challenge.pieces.map((piece, pieceIndex) => {
+      const widthCells = piece.widthCells ?? 1;
+      const heightCells = piece.heightCells ?? 1;
+      const cellCount = widthCells * heightCells;
+      const colorStart = (challengeNumber + pieceIndex * 2) % palette.length;
+      const color = palette[colorStart];
+      const offset = getRunnerPieceOffset(piece, speed);
+
+      return {
+        id: `${challenge.id}-${challengeNumber}-${pieceIndex}`,
+        x: spawnX + offset,
+        offset,
+        width: getRunnerSpecWidth(piece),
+        height: getRunnerSpecHeight(piece),
+        widthCells,
+        heightCells,
+        type: piece.type,
+        color,
+        tileColors: Array.from({ length: cellCount }, () => color),
+      };
     });
+
+    obstaclesRef.current = obstaclesRef.current.concat(obstacles);
+    challengeIndexRef.current = challengeNumber + 1;
+
+    return Math.max(...obstacles.map((obstacle) => obstacle.offset + obstacle.width));
   }, []);
 
   const startGame = useCallback(() => {
@@ -677,14 +823,27 @@ const TinyRunner = () => {
     setStatus('Crashed. Tap restart.');
   }, []);
 
-  const jump = useCallback(() => {
+  const queueJump = useCallback(() => {
+    jumpBufferRef.current = RUNNER_JUMP_BUFFER_FRAMES;
+  }, []);
+
+  const applyJump = useCallback(() => {
     const player = playerRef.current;
-    if (!player.grounded) return;
-    player.vy = jumpVelocity;
+    player.vy = jumpHeldRef.current ? jumpVelocity : RUNNER_SHORT_JUMP_VELOCITY;
     player.grounded = false;
-    rotationRef.current = 0;
+    jumpStartRotationRef.current = rotationRef.current;
     rotationActiveRef.current = true;
     airTimeRef.current = 0;
+    jumpBufferRef.current = 0;
+    coyoteRef.current = 0;
+  }, []);
+
+  const releaseJump = useCallback(() => {
+    jumpHeldRef.current = false;
+    const player = playerRef.current;
+    if (!player.grounded && player.vy < RUNNER_RELEASE_VELOCITY) {
+      player.vy = RUNNER_RELEASE_VELOCITY;
+    }
   }, []);
 
   const handleAction = useCallback(() => {
@@ -692,8 +851,24 @@ const TinyRunner = () => {
       startGame();
       return;
     }
-    jump();
-  }, [jump, running, startGame]);
+    queueJump();
+  }, [queueJump, running, startGame]);
+
+  const handlePointerAction = useCallback(
+    (event) => {
+      event.preventDefault();
+      handleAction();
+      jumpHeldRef.current = true;
+    },
+    [handleAction]
+  );
+
+  const handleArenaClick = useCallback(
+    (event) => {
+      if (event.detail === 0) handleAction();
+    },
+    [handleAction]
+  );
 
   useEffect(() => {
     const updateWidth = () => {
@@ -717,64 +892,140 @@ const TinyRunner = () => {
       if (!lastTimeRef.current) lastTimeRef.current = ts;
       const dt = Math.min(2, (ts - lastTimeRef.current) / 16.67);
       lastTimeRef.current = ts;
-
-      const player = playerRef.current;
-      player.vy += gravity * dt;
-      player.y += player.vy * dt;
-      if (player.y >= floorY) {
-        player.y = floorY;
-        player.vy = 0;
-        player.grounded = true;
-        rotationRef.current = 0;
-        rotationActiveRef.current = false;
-        airTimeRef.current = 0;
-      } else {
-        if (rotationActiveRef.current) {
-          airTimeRef.current += dt;
-          const progress = Math.min(1, airTimeRef.current / jumpDurationRef.current);
-          rotationRef.current = progress * 360;
-        }
+      const speed = baseSpeed + Math.min(2.4, scoreRef.current / 220);
+      if (jumpBufferRef.current > 0) {
+        jumpBufferRef.current = Math.max(0, jumpBufferRef.current - dt);
       }
 
-      obstaclesRef.current = obstaclesRef.current
-        .map((obstacle) => ({ ...obstacle, x: obstacle.x - speed * dt }))
-        .filter((obstacle) => obstacle.x + obstacle.width > -40);
+      const player = playerRef.current;
+      const previousY = player.y;
+      const previousBottom = previousY + playerSize - 3;
+      player.grounded = false;
+      const gravityMultiplier =
+        !jumpHeldRef.current && player.vy < 0
+          ? RUNNER_LOW_JUMP_GRAVITY_MULTIPLIER
+          : 1;
+      player.vy += gravity * gravityMultiplier * dt;
+      player.y += player.vy * dt;
+
+      const obstacles = obstaclesRef.current;
+      let activeObstacleCount = 0;
+      for (let i = 0; i < obstacles.length; i += 1) {
+        const obstacle = obstacles[i];
+        obstacle.x -= speed * dt;
+        if (obstacle.x + obstacle.width > -40) {
+          obstacles[activeObstacleCount] = obstacle;
+          activeObstacleCount += 1;
+        }
+      }
+      obstacles.length = activeObstacleCount;
 
       spawnRef.current += dt;
       if (spawnRef.current >= nextSpawnRef.current) {
         spawnRef.current = 0;
-        nextSpawnRef.current = 55 + Math.random() * 65;
-        spawnObstacle();
+        const challengeSpan = spawnChallenge(speed);
+        const sectionGap =
+          RUNNER_SECTION_GAP + Math.random() * RUNNER_SECTION_GAP_RANDOM;
+        nextSpawnRef.current =
+          Math.max(70, (challengeSpan + sectionGap) / speed);
       }
 
-      const playerLeft = playerX;
-      const playerRight = playerX + playerSize;
-      const playerTop = player.y;
-      const playerBottom = player.y + playerSize;
+      let hit = false;
+      let landedObstacleId = null;
+      const playerRect = {
+        left: playerX + 3,
+        right: playerX + playerSize - 3,
+        top: player.y + 2,
+        bottom: player.y + playerSize - 3,
+      };
 
-      const hit = obstaclesRef.current.some((obstacle) => {
-        const insetX =
-          obstacle.type === 'spike' ? obstacle.width * 0.2 : obstacle.width * 0.08;
-        const insetY =
-          obstacle.type === 'spike' ? obstacle.height * 0.2 : obstacle.height * 0.1;
-        const obstacleLeft = obstacle.x + insetX;
-        const obstacleRight = obstacle.x + obstacle.width - insetX;
-        const obstacleTop =
-          obstacle.type === 'spike'
-            ? groundTop - obstacle.height + insetY
-            : groundTop - obstacle.height + insetY;
-        const obstacleBottom = groundTop;
-        return (
-          playerRight > obstacleLeft &&
-          playerLeft < obstacleRight &&
-          playerBottom > obstacleTop &&
-          playerTop < obstacleBottom
-        );
-      });
+      for (let i = 0; i < obstaclesRef.current.length; i += 1) {
+        const obstacle = obstaclesRef.current[i];
+        const obstacleTop = groundTop - obstacle.height;
+        const obstacleRect = {
+          left: obstacle.x,
+          right: obstacle.x + obstacle.width,
+          top: obstacleTop,
+          bottom: groundTop,
+        };
+
+        if (obstacle.type === 'spike') {
+          const spikeRect = {
+            left: obstacleRect.left + obstacle.width * 0.22,
+            right: obstacleRect.right - obstacle.width * 0.22,
+            top: obstacleRect.top + obstacle.height * 0.18,
+            bottom: obstacleRect.bottom,
+          };
+          if (rectanglesOverlap(playerRect, spikeRect)) {
+            hit = true;
+            break;
+          }
+          continue;
+        }
+
+        const overlapsTop =
+          playerRect.right > obstacleRect.left + 2 &&
+          playerRect.left < obstacleRect.right - 2;
+        const landsOnTop =
+          overlapsTop &&
+          player.vy >= 0 &&
+          previousBottom <= obstacleRect.top + RUNNER_TOP_LANDING_TOLERANCE &&
+          playerRect.bottom >= obstacleRect.top;
+
+        if (landsOnTop) {
+          player.y = obstacleRect.top - playerSize;
+          player.vy = 0;
+          player.grounded = true;
+          landedObstacleId = obstacle.id;
+          playerRect.top = player.y + 2;
+          playerRect.bottom = player.y + playerSize - 3;
+        }
+
+        if (
+          obstacle.id !== landedObstacleId &&
+          rectanglesOverlap(playerRect, obstacleRect)
+        ) {
+          hit = true;
+          break;
+        }
+      }
+
+      if (!hit && player.y >= floorY) {
+        player.y = floorY;
+        player.vy = 0;
+        player.grounded = true;
+      }
 
       if (hit) {
         endGame();
         return;
+      }
+
+      if (player.grounded && rotationActiveRef.current) {
+        rotationRef.current =
+          jumpStartRotationRef.current + RUNNER_JUMP_ROTATION_DEGREES;
+        rotationActiveRef.current = false;
+        airTimeRef.current = 0;
+      }
+
+      if (player.grounded) {
+        coyoteRef.current = RUNNER_COYOTE_FRAMES;
+      } else {
+        coyoteRef.current = Math.max(0, coyoteRef.current - dt);
+      }
+
+      if (
+        (jumpBufferRef.current > 0 || jumpHeldRef.current) &&
+        (player.grounded || coyoteRef.current > 0)
+      ) {
+        applyJump();
+      }
+
+      if (!player.grounded && rotationActiveRef.current) {
+        airTimeRef.current += dt;
+        const progress = Math.min(1, airTimeRef.current / jumpDurationRef.current);
+        rotationRef.current =
+          jumpStartRotationRef.current + progress * RUNNER_JUMP_ROTATION_DEGREES;
       }
 
       scoreRef.current += dt;
@@ -792,29 +1043,55 @@ const TinyRunner = () => {
 
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [endGame, floorY, gravity, groundTop, playerSize, playerX, running, spawnObstacle]);
+  }, [
+    applyJump,
+    baseSpeed,
+    endGame,
+    floorY,
+    gravity,
+    groundTop,
+    playerSize,
+    playerX,
+    running,
+    spawnChallenge,
+  ]);
 
   useEffect(() => {
-    const handleKey = (event) => {
+    const handleKeyDown = (event) => {
       if (event.code !== 'Space' && event.code !== 'ArrowUp') return;
       event.preventDefault();
       handleAction();
+      jumpHeldRef.current = true;
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [handleAction]);
+    const handleKeyUp = (event) => {
+      if (event.code !== 'Space' && event.code !== 'ArrowUp') return;
+      event.preventDefault();
+      releaseJump();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleAction, releaseJump]);
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-widest text-zinc-400">
-        <span>Score: {score}</span>
-        <span>Best: {best}</span>
-        {running && <span>Jump: space / tap</span>}
+      <div className="bb-scoreboard flex flex-wrap items-center justify-between gap-3">
+        <span className="bb-score-pill">Score: {score}</span>
+        <span className="bb-score-pill">Best: {best}</span>
+        {running && <span className="bb-score-pill">Space / Tap</span>}
       </div>
       <button
+        ref={arenaRef}
         type="button"
-        onClick={handleAction}
-        className="relative h-[200px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(30,58,138,0.18),rgba(15,23,42,0.1))] text-left"
+        onPointerDown={handlePointerAction}
+        onPointerUp={releaseJump}
+        onPointerCancel={releaseJump}
+        onPointerLeave={releaseJump}
+        onClick={handleArenaClick}
+        className="runner-arena relative h-[200px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(30,58,138,0.18),rgba(15,23,42,0.1))] text-left"
         aria-label="Tiny runner arena"
       >
         <div className="absolute inset-0 pointer-events-none">
@@ -824,43 +1101,49 @@ const TinyRunner = () => {
           <div className="absolute inset-x-0 bottom-0 h-[30px] bg-blue-900/25" />
         </div>
         <div
-          className="absolute h-6 w-6 rounded-md bg-blue-500/80 shadow-[0_0_18px_rgba(59,130,246,0.4)]"
+          className="runner-player h-6 w-6 rounded-md bg-blue-500/80 shadow-[0_0_18px_rgba(59,130,246,0.4)]"
           style={{
-            left: playerX,
-            top: frame.playerY,
-            transform: `rotate(${frame.rotation}deg)`,
+            transform: `translate3d(${playerX}px, ${frame.playerY}px, 0) rotate(${frame.rotation}deg)`,
             transformOrigin: 'center',
           }}
         />
-        {frame.obstacles.map((obstacle, index) => {
+        {frame.obstacles.map((obstacle) => {
+          const obstacleTop = groundTop - obstacle.height;
           const baseStyle = {
-            left: obstacle.x,
             width: obstacle.width,
             height: obstacle.height,
-            top: groundTop - obstacle.height,
+            transform: `translate3d(${obstacle.x}px, ${obstacleTop}px, 0)`,
           };
 
           if (obstacle.type === 'spike') {
             return (
               <div
-                key={`${index}-${obstacle.x}`}
-                className="absolute gd-spike"
-                style={{
-                  ...baseStyle,
-                  clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-                }}
+                key={obstacle.id}
+                className={`runner-spike ${obstacle.color}`}
+                style={baseStyle}
               >
-                <span className="gd-spike__inner" />
+                <span className="runner-spike__shine" />
               </div>
             );
           }
 
           return (
             <div
-              key={`${index}-${obstacle.x}`}
-              className="absolute gd-block"
-              style={baseStyle}
-            />
+              key={obstacle.id}
+              className="runner-obstacle runner-block-grid"
+              style={{
+                ...baseStyle,
+                '--bb-cell-size': `${RUNNER_CELL_SIZE}px`,
+                gridTemplateColumns: `repeat(${obstacle.widthCells}, var(--bb-cell-size))`,
+              }}
+            >
+              {obstacle.tileColors.map((color, cellIndex) => (
+                <span
+                  key={`${obstacle.id}-${cellIndex}`}
+                  className={`runner-tile bb-cell bb-cell--filled ${color}`}
+                />
+              ))}
+            </div>
           );
         })}
         {!running && (
@@ -1504,6 +1787,9 @@ const GamesPage = () => {
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <div className="text-2xl font-semibold text-white">Block Blast</div>
+                <p className="text-sm text-zinc-400 max-w-lg">
+                  Complete a row or column, keep the combo alive.
+                </p>
               </div>
             </div>
             <div className="mt-6">
@@ -1522,7 +1808,7 @@ const GamesPage = () => {
               <div>
                 <div className="text-2xl font-semibold text-white">Tiny Runner</div>
                 <p className="text-sm text-zinc-400 max-w-lg">
-                  Geometry dash dupe. Jump the blocks and see how long you last.
+                  Jump the blocks and see how long you last.
                 </p>
               </div>
             </div>

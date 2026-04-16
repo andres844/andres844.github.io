@@ -107,6 +107,65 @@
   pointer-events: none;
 }
 
+.runner-arena {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.runner-player,
+.runner-obstacle,
+.runner-spike {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  contain: layout paint;
+}
+
+.runner-player {
+  z-index: 6;
+  cursor: pointer;
+}
+
+.runner-obstacle {
+  z-index: 5;
+  display: grid;
+  gap: 0;
+}
+
+.runner-obstacle .bb-cell {
+  pointer-events: none;
+}
+
+.runner-tile {
+  width: var(--bb-cell-size, 32px);
+  height: var(--bb-cell-size, 32px);
+}
+
+.runner-spike {
+  z-index: 5;
+  background: linear-gradient(
+    145deg,
+    var(--bb-block-from, rgba(125, 211, 252, 0.92)) 0%,
+    var(--bb-block-mid, var(--bb-block-to, rgba(79, 70, 229, 0.95))) 54%,
+    var(--bb-block-to, rgba(79, 70, 229, 0.95)) 100%
+  );
+  clip-path: polygon(50% 0%, 98% 100%, 2% 100%);
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.28));
+}
+
+.runner-spike__shine {
+  position: absolute;
+  left: 28%;
+  top: 20%;
+  width: 18%;
+  height: 48%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.48);
+  transform: rotate(18deg);
+  pointer-events: none;
+}
+
 .bb-board {
   position: relative;
   padding: 10px;
