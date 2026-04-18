@@ -13,7 +13,6 @@ const BLOCK_COLORS = [
 
 const COLOR_THEMES = [
   {
-    name: 'Verdant',
     palette: [
       'bb-block--verdant-1',
       'bb-block--verdant-2',
@@ -26,7 +25,6 @@ const COLOR_THEMES = [
     ],
   },
   {
-    name: 'Sunset',
     palette: [
       'bb-block--sunset-1',
       'bb-block--sunset-2',
@@ -39,7 +37,6 @@ const COLOR_THEMES = [
     ],
   },
   {
-    name: 'Christmas',
     palette: [
       'bb-block--xmas-1',
       'bb-block--xmas-2',
@@ -52,7 +49,6 @@ const COLOR_THEMES = [
     ],
   },
   {
-    name: 'Indigo Tide',
     palette: [
       'bb-block--deep-1',
       'bb-block--deep-2',
@@ -65,7 +61,6 @@ const COLOR_THEMES = [
     ],
   },
   {
-    name: 'Chrome',
     palette: [
       'bb-block--chrome-1',
       'bb-block--chrome-2',
@@ -80,6 +75,396 @@ const COLOR_THEMES = [
 ];
 
 const THEME_CYCLE_EVERY = 3;
+const ARCADE_MASTER_GAIN = 1;
+const ARCADE_VOLUME_BOOST = 1.8;
+
+const useArcadeAudio = () => {
+  const audioRef = useRef({
+    context: null,
+    master: null,
+    noiseBuffer: null,
+  });
+
+  const getContext = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) return null;
+
+    if (!audioRef.current.context) {
+      const context = new AudioCtor();
+      const master = context.createGain();
+      const compressor = context.createDynamicsCompressor();
+      master.gain.value = ARCADE_MASTER_GAIN;
+      compressor.threshold.setValueAtTime(-20, context.currentTime);
+      compressor.knee.setValueAtTime(18, context.currentTime);
+      compressor.ratio.setValueAtTime(6, context.currentTime);
+      compressor.attack.setValueAtTime(0.003, context.currentTime);
+      compressor.release.setValueAtTime(0.18, context.currentTime);
+      master.connect(compressor);
+      compressor.connect(context.destination);
+      audioRef.current.context = context;
+      audioRef.current.master = master;
+    }
+
+    return audioRef.current.context;
+  }, []);
+
+  const ensureNoiseBuffer = useCallback((context) => {
+    if (!context) return null;
+    const cached = audioRef.current.noiseBuffer;
+    if (cached && cached.sampleRate === context.sampleRate) return cached;
+
+    const length = context.sampleRate * 0.25;
+    const buffer = context.createBuffer(1, length, context.sampleRate);
+    const channel = buffer.getChannelData(0);
+    for (let i = 0; i < length; i += 1) {
+      channel[i] = Math.random() * 2 - 1;
+    }
+    audioRef.current.noiseBuffer = buffer;
+    return buffer;
+  }, []);
+
+  const unlock = useCallback(async () => {
+    const context = getContext();
+    if (!context) return false;
+    if (context.state === 'suspended') {
+      try {
+        await context.resume();
+      } catch {
+        return false;
+      }
+    }
+    return context.state === 'running';
+  }, [getContext]);
+
+  const playTone = useCallback(
+    ({
+      frequency,
+      type = 'triangle',
+      volume = 0.05,
+      attack = 0.003,
+      release = 0.12,
+      delay = 0,
+      slideTo = null,
+      slideTime = 0.08,
+      detune = 0,
+    }) => {
+      const context = getContext();
+      const master = audioRef.current.master;
+      if (!context || !master || context.state !== 'running') return;
+
+      const start = context.currentTime + delay;
+      const end = start + attack + release;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const boostedVolume = Math.min(0.98, volume * ARCADE_VOLUME_BOOST);
+
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(Math.max(1, frequency), start);
+      oscillator.detune.setValueAtTime(detune, start);
+      if (slideTo) {
+        oscillator.frequency.exponentialRampToValueAtTime(
+          Math.max(1, slideTo),
+          start + slideTime
+        );
+      }
+
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime(boostedVolume, start + attack);
+      gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+      oscillator.connect(gain);
+      gain.connect(master);
+      oscillator.start(start);
+      oscillator.stop(end + 0.03);
+    },
+    [getContext]
+  );
+
+  const playNoise = useCallback(
+    ({
+      volume = 0.035,
+      duration = 0.07,
+      delay = 0,
+      highpass = 500,
+      lowpass = 5000,
+    }) => {
+      const context = getContext();
+      const master = audioRef.current.master;
+      if (!context || !master || context.state !== 'running') return;
+
+      const buffer = ensureNoiseBuffer(context);
+      if (!buffer) return;
+
+      const start = context.currentTime + delay;
+      const source = context.createBufferSource();
+      const gain = context.createGain();
+      const highpassFilter = context.createBiquadFilter();
+      const lowpassFilter = context.createBiquadFilter();
+      const boostedVolume = Math.min(0.98, volume * ARCADE_VOLUME_BOOST);
+
+      source.buffer = buffer;
+      highpassFilter.type = 'highpass';
+      highpassFilter.frequency.setValueAtTime(highpass, start);
+      lowpassFilter.type = 'lowpass';
+      lowpassFilter.frequency.setValueAtTime(lowpass, start);
+
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime(boostedVolume, start + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+      source.connect(highpassFilter);
+      highpassFilter.connect(lowpassFilter);
+      lowpassFilter.connect(gain);
+      gain.connect(master);
+
+      source.start(start);
+      source.stop(start + duration + 0.02);
+    },
+    [ensureNoiseBuffer, getContext]
+  );
+
+  const playBlockPlace = useCallback(
+    (cellCount = 1) => {
+      const sizeBias = Math.min(5, cellCount);
+      playTone({
+        frequency: 220 + sizeBias * 16,
+        slideTo: 170 + sizeBias * 12,
+        type: 'triangle',
+        volume: 0.04,
+        release: 0.08,
+      });
+      playTone({
+        frequency: 540 + sizeBias * 18,
+        slideTo: 430 + sizeBias * 12,
+        type: 'sine',
+        volume: 0.022,
+        delay: 0.014,
+        release: 0.06,
+      });
+    },
+    [playTone]
+  );
+
+  const playBlockClear = useCallback(
+    (linesCleared = 1, comboLevel = 0) => {
+      const popCount = Math.min(4, Math.max(1, linesCleared + comboLevel));
+      for (let i = 0; i < popCount; i += 1) {
+        const base = 240 + i * 48 + linesCleared * 22;
+        playTone({
+          frequency: base,
+          slideTo: base + 170,
+          slideTime: 0.045,
+          type: 'sine',
+          volume: 0.052 + comboLevel * 0.006,
+          delay: i * 0.04,
+          release: 0.085,
+        });
+        playTone({
+          frequency: base * 0.82,
+          slideTo: base + 92,
+          slideTime: 0.035,
+          type: 'triangle',
+          volume: 0.022 + linesCleared * 0.004,
+          delay: i * 0.04 + 0.006,
+          release: 0.06,
+        });
+        playNoise({
+          volume: 0.01 + linesCleared * 0.003,
+          duration: 0.03,
+          delay: i * 0.04 + 0.004,
+          highpass: 220 + i * 30,
+          lowpass: 2400 + i * 140,
+        });
+      }
+
+      if (comboLevel > 0) {
+        playTone({
+          frequency: 620 + comboLevel * 35,
+          slideTo: 880 + comboLevel * 42,
+          type: 'sine',
+          volume: 0.032,
+          delay: popCount * 0.03,
+          release: 0.12,
+        });
+      }
+    },
+    [playNoise, playTone]
+  );
+
+  const midiToFrequency = useCallback((midi) => 440 * 2 ** ((midi - 69) / 12), []);
+
+  const playRunnerJump = useCallback(
+    (jumpIndex = 0, isShortJump = false) => {
+      const rootMidi = 57; // A3
+      const melody = [12, 15, 19, 22, 19, 15, 12, 10, 12, 15, 19, 24];
+      const accent = [7, 10, 12, 15, 12, 10];
+      const leadMidi = rootMidi + melody[jumpIndex % melody.length];
+      const accentMidi = rootMidi + accent[jumpIndex % accent.length];
+      const leadFrequency = midiToFrequency(leadMidi);
+      const accentFrequency = midiToFrequency(accentMidi);
+      const supportFrequency = midiToFrequency(leadMidi - 12);
+      const isAnchorJump = jumpIndex % 6 === 5;
+
+      playTone({
+        frequency: leadFrequency,
+        slideTo: leadFrequency * (isShortJump ? 1.03 : 1.07),
+        type: 'triangle',
+        volume: isShortJump ? 0.058 : 0.076,
+        attack: 0.0015,
+        release: isShortJump ? 0.075 : 0.115,
+        detune: 3,
+      });
+      playTone({
+        frequency: leadFrequency * 2,
+        slideTo: leadFrequency * (isShortJump ? 1.95 : 2.08),
+        type: 'square',
+        volume: isShortJump ? 0.012 : 0.018,
+        delay: 0.01,
+        release: 0.06,
+        detune: -5,
+      });
+      playTone({
+        frequency: accentFrequency,
+        slideTo: accentFrequency * 0.97,
+        type: 'sine',
+        volume: 0.026,
+        delay: 0.02,
+        release: 0.09,
+      });
+      playTone({
+        frequency: supportFrequency,
+        slideTo: supportFrequency * 0.96,
+        type: 'triangle',
+        volume: 0.022,
+        attack: 0.002,
+        release: 0.12,
+      });
+      playNoise({
+        volume: isShortJump ? 0.006 : 0.009,
+        duration: 0.028,
+        highpass: 1800,
+        lowpass: 4200,
+      });
+      if (isAnchorJump) {
+        const bassFrequency = midiToFrequency(rootMidi - 5);
+        playTone({
+          frequency: bassFrequency,
+          slideTo: bassFrequency * 1.08,
+          type: 'sine',
+          volume: 0.05,
+          attack: 0.002,
+          release: 0.18,
+        });
+        playTone({
+          frequency: bassFrequency * 1.5,
+          slideTo: bassFrequency * 1.42,
+          type: 'square',
+          volume: 0.016,
+          attack: 0.003,
+          delay: 0.016,
+          release: 0.09,
+        });
+      }
+    },
+    [midiToFrequency, playNoise, playTone]
+  );
+
+  const playRunnerLand = useCallback(
+    (hardLanding = false) => {
+      playTone({
+        frequency: hardLanding ? 180 : 210,
+        slideTo: hardLanding ? 120 : 150,
+        type: 'triangle',
+        volume: hardLanding ? 0.038 : 0.026,
+        release: 0.05,
+      });
+    },
+    [playTone]
+  );
+
+  const playRunnerCrash = useCallback(() => {
+    playTone({
+      frequency: 72,
+      slideTo: 32,
+      type: 'sine',
+      volume: 0.13,
+      attack: 0.003,
+      release: 0.48,
+    });
+    playTone({
+      frequency: 96,
+      slideTo: 42,
+      type: 'triangle',
+      volume: 0.1,
+      attack: 0.004,
+      release: 0.38,
+      delay: 0.012,
+      detune: -9,
+    });
+    playTone({
+      frequency: 410,
+      slideTo: 74,
+      type: 'square',
+      volume: 0.048,
+      attack: 0.001,
+      release: 0.09,
+    });
+    playNoise({
+      volume: 0.092,
+      duration: 0.32,
+      highpass: 60,
+      lowpass: 1050,
+    });
+    playTone({
+      frequency: 148,
+      slideTo: 54,
+      type: 'sawtooth',
+      volume: 0.058,
+      attack: 0.003,
+      release: 0.24,
+      delay: 0.045,
+    });
+    playNoise({
+      volume: 0.05,
+      duration: 0.52,
+      delay: 0.06,
+      highpass: 140,
+      lowpass: 1900,
+    });
+  }, [playNoise, playTone]);
+
+  useEffect(
+    () => () => {
+      if (audioRef.current.context) {
+        audioRef.current.context.close().catch(() => {});
+        audioRef.current.context = null;
+        audioRef.current.master = null;
+        audioRef.current.noiseBuffer = null;
+      }
+    },
+    []
+  );
+
+  return useMemo(
+    () => ({
+      unlock,
+      playBlockPlace,
+      playBlockClear,
+      playRunnerJump,
+      playRunnerLand,
+      playRunnerCrash,
+    }),
+    [
+      playBlockClear,
+      playBlockPlace,
+      playRunnerCrash,
+      playRunnerJump,
+      playRunnerLand,
+      unlock,
+    ]
+  );
+};
 
 const createShape = (id, cells) => {
   const width = Math.max(...cells.map(([x]) => x)) + 1;
@@ -620,7 +1005,24 @@ const RUNNER_CHAIN_JUMP_FRAMES = 28.6;
 const RUNNER_CHAIN_SPEED_LEAD = 0.1;
 const RUNNER_SECTION_GAP = 270;
 const RUNNER_SECTION_GAP_RANDOM = 50;
+const RUNNER_DEATH_BURST_DURATION_MS = 620;
 const RUNNER_TOP_LANDING_TOLERANCE = 18;
+const RUNNER_BODY_TOP_INSET = 4;
+const RUNNER_BODY_SIDE_INSET = 5;
+const RUNNER_BODY_BOTTOM_INSET = 4;
+const RUNNER_FEET_SIDE_INSET = 7;
+const RUNNER_SIDE_COLLISION_DEPTH = 8;
+const RUNNER_BURST_PIXEL_SIZE = 6;
+const RUNNER_BURST_COLORS = [
+  '#f8fafc',
+  '#dbeafe',
+  '#93c5fd',
+  '#60a5fa',
+  '#3b82f6',
+  '#1d4ed8',
+  '#facc15',
+  '#f97316',
+];
 
 const RUNNER_CHALLENGES = [
   {
@@ -713,10 +1115,37 @@ const pickRunnerChallenge = (score, challengeIndex) => {
 const rectanglesOverlap = (a, b) =>
   a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
 
-const TinyRunner = () => {
+const createRunnerBurstParticles = () => {
+  const particles = [];
+  for (let row = 0; row < 4; row += 1) {
+    for (let col = 0; col < 4; col += 1) {
+      const dxBase = col - 1.5;
+      const dyBase = row - 1.5;
+      const angle = Math.atan2(dyBase, dxBase) + (Math.random() - 0.5) * 0.42;
+      const speed = 18 + Math.random() * 20 + (row === 0 ? 8 : 0);
+      particles.push({
+        id: `${row}-${col}`,
+        left: col * RUNNER_BURST_PIXEL_SIZE,
+        top: row * RUNNER_BURST_PIXEL_SIZE,
+        size: RUNNER_BURST_PIXEL_SIZE - (Math.random() > 0.65 ? 1 : 0),
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed - 10 - Math.random() * 10,
+        rotate: (Math.random() - 0.5) * 180,
+        color:
+          RUNNER_BURST_COLORS[
+            (row * 4 + col + Math.floor(Math.random() * 3)) % RUNNER_BURST_COLORS.length
+          ],
+        delay: Math.random() * 0.05,
+      });
+    }
+  }
+  return particles;
+};
+
+const TinyRunner = ({ audio }) => {
   const arenaHeight = 200;
   const groundOffset = 30;
-  const playerSize = 26;
+  const playerSize = 24;
   const playerX = 52;
   const gravity = 0.9;
   const jumpVelocity = -13;
@@ -741,11 +1170,17 @@ const TinyRunner = () => {
   const jumpBufferRef = useRef(0);
   const jumpHeldRef = useRef(false);
   const coyoteRef = useRef(RUNNER_COYOTE_FRAMES);
+  const deathBurstTimeoutRef = useRef(0);
+  const jumpMelodyRef = useRef(0);
+  const restartReadyRef = useRef(true);
+  const restartReleaseGateRef = useRef(false);
 
   const [running, setRunning] = useState(false);
+  const [playerVisible, setPlayerVisible] = useState(false);
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
   const [status, setStatus] = useState('Tap start or press space.');
+  const [deathBurst, setDeathBurst] = useState(null);
   const [frame, setFrame] = useState({
     playerY: 0,
     obstacles: [],
@@ -770,6 +1205,14 @@ const TinyRunner = () => {
     jumpBufferRef.current = 0;
     jumpHeldRef.current = false;
     coyoteRef.current = RUNNER_COYOTE_FRAMES;
+    jumpMelodyRef.current = 0;
+    restartReadyRef.current = true;
+    restartReleaseGateRef.current = false;
+    if (deathBurstTimeoutRef.current) {
+      clearTimeout(deathBurstTimeoutRef.current);
+      deathBurstTimeoutRef.current = 0;
+    }
+    setDeathBurst(null);
     setScore(0);
     setFrame({ playerY: floorY, obstacles: [], rotation: 0 });
   }, [floorY]);
@@ -813,15 +1256,42 @@ const TinyRunner = () => {
 
   const startGame = useCallback(() => {
     resetState();
+    setPlayerVisible(true);
     setStatus('Run.');
     setRunning(true);
   }, [resetState]);
 
   const endGame = useCallback(() => {
     setRunning(false);
+    setPlayerVisible(false);
     setBest((prev) => Math.max(prev, Math.floor(scoreRef.current)));
-    setStatus('Crashed. Tap restart.');
-  }, []);
+    setStatus('Crashed.');
+    audio?.playRunnerCrash();
+  }, [audio]);
+
+  const triggerDeathBurst = useCallback(
+    (y) => {
+      restartReadyRef.current = false;
+      restartReleaseGateRef.current = jumpHeldRef.current;
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      setDeathBurst({
+        id,
+        x: playerX,
+        y,
+        particles: createRunnerBurstParticles(),
+      });
+      if (deathBurstTimeoutRef.current) {
+        clearTimeout(deathBurstTimeoutRef.current);
+      }
+      deathBurstTimeoutRef.current = window.setTimeout(() => {
+        setDeathBurst((current) => (current?.id === id ? null : current));
+        restartReadyRef.current = true;
+        setStatus('Crashed. Tap restart.');
+        deathBurstTimeoutRef.current = 0;
+      }, RUNNER_DEATH_BURST_DURATION_MS);
+    },
+    [playerX]
+  );
 
   const queueJump = useCallback(() => {
     jumpBufferRef.current = RUNNER_JUMP_BUFFER_FRAMES;
@@ -829,25 +1299,35 @@ const TinyRunner = () => {
 
   const applyJump = useCallback(() => {
     const player = playerRef.current;
-    player.vy = jumpHeldRef.current ? jumpVelocity : RUNNER_SHORT_JUMP_VELOCITY;
+    const isShortJump = !jumpHeldRef.current;
+    player.vy = isShortJump ? RUNNER_SHORT_JUMP_VELOCITY : jumpVelocity;
     player.grounded = false;
     jumpStartRotationRef.current = rotationRef.current;
     rotationActiveRef.current = true;
     airTimeRef.current = 0;
     jumpBufferRef.current = 0;
     coyoteRef.current = 0;
-  }, []);
+    audio?.playRunnerJump(jumpMelodyRef.current, isShortJump);
+    jumpMelodyRef.current += 1;
+  }, [audio, jumpVelocity]);
 
   const releaseJump = useCallback(() => {
     jumpHeldRef.current = false;
+    restartReleaseGateRef.current = false;
+    if (!running) return;
     const player = playerRef.current;
     if (!player.grounded && player.vy < RUNNER_RELEASE_VELOCITY) {
       player.vy = RUNNER_RELEASE_VELOCITY;
     }
-  }, []);
+  }, [running]);
 
   const handleAction = useCallback(() => {
     if (!running) {
+      if (!restartReadyRef.current) {
+        restartReleaseGateRef.current = true;
+        return;
+      }
+      if (restartReleaseGateRef.current) return;
       startGame();
       return;
     }
@@ -857,10 +1337,11 @@ const TinyRunner = () => {
   const handlePointerAction = useCallback(
     (event) => {
       event.preventDefault();
+      audio?.unlock();
       handleAction();
       jumpHeldRef.current = true;
     },
-    [handleAction]
+    [audio, handleAction]
   );
 
   const handleArenaClick = useCallback(
@@ -880,6 +1361,15 @@ const TinyRunner = () => {
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
+  useEffect(
+    () => () => {
+      if (deathBurstTimeoutRef.current) {
+        clearTimeout(deathBurstTimeoutRef.current);
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     if (!running) {
       cancelAnimationFrame(rafRef.current);
@@ -898,6 +1388,7 @@ const TinyRunner = () => {
       }
 
       const player = playerRef.current;
+      const wasGrounded = player.grounded;
       const previousY = player.y;
       const previousBottom = previousY + playerSize - 3;
       player.grounded = false;
@@ -932,11 +1423,17 @@ const TinyRunner = () => {
 
       let hit = false;
       let landedObstacleId = null;
-      const playerRect = {
-        left: playerX + 3,
-        right: playerX + playerSize - 3,
-        top: player.y + 2,
-        bottom: player.y + playerSize - 3,
+      const playerBodyRect = {
+        left: playerX + RUNNER_BODY_SIDE_INSET,
+        right: playerX + playerSize - RUNNER_BODY_SIDE_INSET,
+        top: player.y + RUNNER_BODY_TOP_INSET,
+        bottom: player.y + playerSize - RUNNER_BODY_BOTTOM_INSET,
+      };
+      const playerFeetRect = {
+        left: playerX + RUNNER_FEET_SIDE_INSET,
+        right: playerX + playerSize - RUNNER_FEET_SIDE_INSET,
+        top: player.y + playerSize - 8,
+        bottom: player.y + playerSize - 1,
       };
 
       for (let i = 0; i < obstaclesRef.current.length; i += 1) {
@@ -956,7 +1453,7 @@ const TinyRunner = () => {
             top: obstacleRect.top + obstacle.height * 0.18,
             bottom: obstacleRect.bottom,
           };
-          if (rectanglesOverlap(playerRect, spikeRect)) {
+          if (rectanglesOverlap(playerBodyRect, spikeRect)) {
             hit = true;
             break;
           }
@@ -964,26 +1461,29 @@ const TinyRunner = () => {
         }
 
         const overlapsTop =
-          playerRect.right > obstacleRect.left + 2 &&
-          playerRect.left < obstacleRect.right - 2;
+          playerFeetRect.right > obstacleRect.left + 1 &&
+          playerFeetRect.left < obstacleRect.right - 1;
         const landsOnTop =
           overlapsTop &&
           player.vy >= 0 &&
           previousBottom <= obstacleRect.top + RUNNER_TOP_LANDING_TOLERANCE &&
-          playerRect.bottom >= obstacleRect.top;
+          playerFeetRect.bottom >= obstacleRect.top;
 
         if (landsOnTop) {
           player.y = obstacleRect.top - playerSize;
           player.vy = 0;
           player.grounded = true;
           landedObstacleId = obstacle.id;
-          playerRect.top = player.y + 2;
-          playerRect.bottom = player.y + playerSize - 3;
+          playerBodyRect.top = player.y + RUNNER_BODY_TOP_INSET;
+          playerBodyRect.bottom = player.y + playerSize - RUNNER_BODY_BOTTOM_INSET;
+          playerFeetRect.top = player.y + playerSize - 8;
+          playerFeetRect.bottom = player.y + playerSize - 1;
         }
 
         if (
           obstacle.id !== landedObstacleId &&
-          rectanglesOverlap(playerRect, obstacleRect)
+          rectanglesOverlap(playerBodyRect, obstacleRect) &&
+          playerBodyRect.bottom > obstacleRect.top + RUNNER_SIDE_COLLISION_DEPTH
         ) {
           hit = true;
           break;
@@ -997,8 +1497,18 @@ const TinyRunner = () => {
       }
 
       if (hit) {
+        triggerDeathBurst(player.y);
         endGame();
         return;
+      }
+
+      if (
+        !wasGrounded &&
+        player.grounded &&
+        jumpBufferRef.current <= 0 &&
+        !jumpHeldRef.current
+      ) {
+        audio?.playRunnerLand(player.y >= floorY - 0.5);
       }
 
       if (player.grounded && rotationActiveRef.current) {
@@ -1045,6 +1555,7 @@ const TinyRunner = () => {
     return () => cancelAnimationFrame(rafRef.current);
   }, [
     applyJump,
+    audio,
     baseSpeed,
     endGame,
     floorY,
@@ -1054,12 +1565,14 @@ const TinyRunner = () => {
     playerX,
     running,
     spawnChallenge,
+    triggerDeathBurst,
   ]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.code !== 'Space' && event.code !== 'ArrowUp') return;
       event.preventDefault();
+      audio?.unlock();
       handleAction();
       jumpHeldRef.current = true;
     };
@@ -1074,7 +1587,7 @@ const TinyRunner = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [handleAction, releaseJump]);
+  }, [audio, handleAction, releaseJump]);
 
   return (
     <div className="space-y-5">
@@ -1100,13 +1613,45 @@ const TinyRunner = () => {
           <div className="absolute inset-x-0 bottom-[30px] h-px bg-blue-400/50" />
           <div className="absolute inset-x-0 bottom-0 h-[30px] bg-blue-900/25" />
         </div>
-        <div
-          className="runner-player h-6 w-6 rounded-md bg-blue-500/80 shadow-[0_0_18px_rgba(59,130,246,0.4)]"
-          style={{
-            transform: `translate3d(${playerX}px, ${frame.playerY}px, 0) rotate(${frame.rotation}deg)`,
-            transformOrigin: 'center',
-          }}
-        />
+        {playerVisible && !deathBurst && (
+          <div
+            className="runner-player rounded-md bg-blue-500/80 shadow-[0_0_18px_rgba(59,130,246,0.4)]"
+            style={{
+              width: playerSize,
+              height: playerSize,
+              transform: `translate3d(${playerX}px, ${frame.playerY}px, 0) rotate(${frame.rotation}deg)`,
+              transformOrigin: 'center',
+            }}
+          />
+        )}
+        {deathBurst && (
+          <div
+            className="runner-burst"
+            style={{
+              width: playerSize,
+              height: playerSize,
+              transform: `translate3d(${deathBurst.x}px, ${deathBurst.y}px, 0)`,
+            }}
+          >
+            {deathBurst.particles.map((particle) => (
+              <span
+                key={`${deathBurst.id}-${particle.id}`}
+                className="runner-burst__pixel"
+                style={{
+                  left: particle.left,
+                  top: particle.top,
+                  width: particle.size,
+                  height: particle.size,
+                  background: particle.color,
+                  '--runner-pixel-dx': `${particle.dx}px`,
+                  '--runner-pixel-dy': `${particle.dy}px`,
+                  '--runner-pixel-rotate': `${particle.rotate}deg`,
+                  animationDelay: `${particle.delay}s`,
+                }}
+              />
+            ))}
+          </div>
+        )}
         {frame.obstacles.map((obstacle) => {
           const obstacleTop = groundTop - obstacle.height;
           const baseStyle = {
@@ -1150,7 +1695,9 @@ const TinyRunner = () => {
           <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-300">
             <div className="text-xs uppercase tracking-[0.4em] text-blue-200">Tiny Runner</div>
             <div className="mt-3 text-xl font-semibold">{status}</div>
-            <div className="mt-2 text-sm text-zinc-400">Tap the arena or press space.</div>
+            <div className="mt-2 text-sm text-zinc-400">
+              {deathBurst ? 'Wait for the explosion to finish.' : 'Tap the arena or press space.'}
+            </div>
           </div>
         )}
       </button>
@@ -1331,7 +1878,7 @@ const DragGhost = React.memo(
 
 DragGhost.displayName = 'DragGhost';
 
-const BlockBlast = () => {
+const BlockBlast = ({ audio }) => {
   const boardRef = useRef(null);
   const [grid, setGrid] = useState(createEmptyGrid);
   const themeRef = useRef(0);
@@ -1410,6 +1957,7 @@ const BlockBlast = () => {
       const placed = placePiece(grid, piece, row, col);
       const clearedMask = clearLinesMask(boardMask | placement.mask).mask;
       const { grid: cleared, linesCleared, clearedRows, clearedCols } = clearLines(placed);
+      audio?.playBlockPlace(piece.cells.length);
       let nextStreak = comboRef.current;
       let comboLevel = 0;
       if (linesCleared > 0) {
@@ -1438,6 +1986,7 @@ const BlockBlast = () => {
         popTimeoutRef.current = window.setTimeout(() => {
           setPopCells(null);
         }, 420);
+        audio?.playBlockClear(linesCleared, comboLevel);
       }
       const baseScore =
         piece.cells.length * 2 + linesCleared * BLOCK_GRID_SIZE * 3;
@@ -1484,7 +2033,7 @@ const BlockBlast = () => {
 
       return true;
     },
-    [boardMask, cycleTheme, gameOver, grid, pieces]
+    [audio, boardMask, cycleTheme, gameOver, grid, pieces]
   );
 
   useEffect(() => {
@@ -1601,18 +2150,25 @@ const BlockBlast = () => {
     setGameOver(false);
   }, []);
 
+  const handleReset = useCallback(() => {
+    audio?.unlock();
+    reset();
+  }, [audio, reset]);
+
   const handleSelectPiece = useCallback(
     (index) => {
       if (!pieces[index] || gameOver) return;
+      audio?.unlock();
       setSelectedIndex(index);
     },
-    [gameOver, pieces]
+    [audio, gameOver, pieces]
   );
 
   const handlePiecePointerDown = useCallback(
     (event, index, piece) => {
       if (!piece || gameOver) return;
       event.preventDefault();
+      audio?.unlock();
 
       const gridElement = event.currentTarget.querySelector('.bb-piece-grid');
       if (!gridElement) return;
@@ -1703,7 +2259,7 @@ const BlockBlast = () => {
       setHoverCell(initialPlacement);
       lastPlacementRef.current = initialPlacement;
     },
-    [boardMask, gameOver, updateDragGhostPosition]
+    [audio, boardMask, gameOver, updateDragGhostPosition]
   );
 
   return (
@@ -1725,7 +2281,7 @@ const BlockBlast = () => {
           popCells={popCells}
           gameOver={gameOver}
           comboToast={comboToast}
-          onReset={reset}
+          onReset={handleReset}
         />
         <PieceTray
           pieces={pieces}
@@ -1737,7 +2293,7 @@ const BlockBlast = () => {
         />
         <button
           type="button"
-          onClick={reset}
+          onClick={handleReset}
           className="rounded-xl border border-white/10 bg-blue-500/20 px-4 py-2 text-xs uppercase tracking-[0.35em] text-blue-100 hover:bg-blue-500/30"
         >
           Restart
@@ -1756,6 +2312,8 @@ const BlockBlast = () => {
 };
 
 const GamesPage = () => {
+  const arcadeAudio = useArcadeAudio();
+
   return (
     <div className="relative bg-[#040a16] text-white cursor-crosshair">
       <AmbientVoidBackground lightweight />
@@ -1793,7 +2351,7 @@ const GamesPage = () => {
               </div>
             </div>
             <div className="mt-6">
-              <BlockBlast />
+              <BlockBlast audio={arcadeAudio} />
             </div>
           </motion.article>
 
@@ -1813,7 +2371,7 @@ const GamesPage = () => {
               </div>
             </div>
             <div className="mt-6">
-              <TinyRunner />
+              <TinyRunner audio={arcadeAudio} />
             </div>
           </motion.article>
 
