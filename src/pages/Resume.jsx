@@ -315,6 +315,13 @@ const Resume = () => {
                   tags: ['Polygon.io API', 'Matplotlib', 'SeaBorn'],
                 },
                 {
+                  title: 'E-Commerce site: Testadura.online',
+                  description:
+                    'Engineered a modern, high-performance apparel e-commerce web application featuring dynamic product catalog browsing, persistent cart state management, and a server-side pre-drop password gate for exclusive releases. Built the responsive frontend using React 18, Vite, Tailwind CSS, and Framer Motion for micro-interactions, paired with a serverless Cloudflare Workers backend integrated with the Stripe Checkout API for secure international payment processing and automated order lifecycle handling.',
+                  tags: ['React 18', 'Vite', 'Tailwind CSS', 'Framer Motion', 'Cloudflare Workers', 'Stripe API'],
+                  link: 'https://testadura.online',
+                },
+                {
                   title: 'AI Research Assistant',
                   description: 'Built a RAG-powered research assistant using LangChain and OpenAI API',
                   tags: ['Python', 'LangChain', 'OpenAI API'],
@@ -335,7 +342,33 @@ const Resume = () => {
                   className="glass-card hover-change p-6 rounded-2xl transition-colors"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <h3 className="text-xl font-bold text-gray-100">{project.title}</h3>
+                    <h3 className="text-xl font-bold text-gray-100">
+                      {project.link ? (
+                        <a
+                          href={project.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-yellow-300 transition-colors inline-flex items-center gap-1.5"
+                        >
+                          {project.title}
+                          <svg
+                            className="w-4 h-4 opacity-75 inline-block"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
+                          </svg>
+                        </a>
+                      ) : (
+                        project.title
+                      )}
+                    </h3>
                   </div>
                   <p className="text-gray-300 mb-4">{project.description}</p>
                   {project.tags && project.tags.length > 0 && (
