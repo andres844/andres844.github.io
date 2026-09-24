@@ -33,10 +33,10 @@ const Navbar = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="container mx-auto flex justify-between items-center px-4">
+      <div className="container mx-auto flex justify-center md:justify-between items-center px-4">
         <Link 
           to="/" 
-          className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300"
+          className="hidden md:block text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300"
         >
           Andres Avelar
         </Link>
