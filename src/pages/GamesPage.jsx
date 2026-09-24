@@ -2324,7 +2324,7 @@ const GamesPage = () => {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-400"
+            className="text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300 inline-block"
           >
             Games Arcade
           </motion.h1>
@@ -2344,7 +2344,7 @@ const GamesPage = () => {
           >
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <div className="text-2xl font-semibold text-white">Block Blast</div>
+                <div className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300 inline-block">Block Blast</div>
                 <p className="text-sm text-zinc-400 max-w-lg">
                   Complete a row or column, keep the combo alive.
                 </p>
@@ -2364,7 +2364,7 @@ const GamesPage = () => {
           >
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <div className="text-2xl font-semibold text-white">Tiny Runner</div>
+                <div className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300 inline-block">Tiny Runner</div>
                 <p className="text-sm text-zinc-400 max-w-lg">
                   Jump the blocks and see how long you last.
                 </p>

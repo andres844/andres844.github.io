@@ -11,7 +11,7 @@ import './App.css';
 const App = () => {
   return (
     <Router>
-      <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 text-white">
+      <div className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-amber-400/30 selection:text-amber-200">
         {/* Global scroll progress bar above everything, including navbar */}
         <ScrollProgress />
         <ScrollToTop />

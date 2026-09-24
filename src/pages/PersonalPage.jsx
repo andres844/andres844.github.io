@@ -14,7 +14,7 @@ const PersonalPage = () => {
   }, []);
 
   return (
-    <div className="relative bg-[#040a16] text-white cursor-crosshair">
+    <div className="relative bg-[#030712] text-slate-100 font-sans cursor-crosshair">
       <AmbientVoidBackground />
       <CursorRipples />
 
@@ -24,18 +24,16 @@ const PersonalPage = () => {
       <header className="container mx-auto px-4 mb-12 text-center">
         <div className="flex justify-center mb-6">
           <motion.div
-            className="relative z-20"
+            className="relative z-20 p-1 rounded-full bg-gradient-to-tr from-amber-400/40 via-sky-400/30 to-blue-500/40 shadow-[0_0_35px_rgba(245,158,11,0.22)]"
             whileHover={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 300 }}
-            initial={{ opacity: 1, y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
           >
             <picture>
               <source srcSet="/pic.webp" type="image/webp" />
               <img
                 src="/pic.jpg"
                 alt="Andres Avelar"
-                className="w-48 h-48 rounded-full object-cover border-4 border-blue-900 shadow-lg"
+                className="w-48 h-48 rounded-full object-cover border-2 border-slate-900"
                 width={192}
                 height={192}
                 loading="eager"
@@ -50,11 +48,11 @@ const PersonalPage = () => {
           animate={{ opacity: isVisible ? 1 : 0, y: 0 }}
           transition={{ duration: 1 }}
         >
-          <h1 className="text-5xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-400">
+          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300 inline-block">
             Personal Space
           </h1>
-          <p className="text-xl text-gray-300 max-w-lg mx-auto">
-            This is my personal page, brief intro to some of my hobbies and interests.
+          <p className="text-lg text-slate-300 max-w-lg mx-auto">
+            Brief intro to some of my hobbies, passions, and athletic pursuits.
           </p>
         </motion.div>
       </header>
@@ -68,9 +66,9 @@ const PersonalPage = () => {
           viewport={{ once: true }}
           className="mb-16 text-center"
         >
-          <blockquote className="text-2xl italic text-gray-300 max-w-2xl mx-auto">
+          <blockquote className="text-2xl italic text-slate-300 max-w-2xl mx-auto font-sans font-light">
             "The medium is the message"
-            <footer className="text-lg mt-2">- Marshall McLuhan</footer>
+            <footer className="text-sm font-mono text-amber-300/80 mt-2">— Marshall McLuhan</footer>
           </blockquote>
         </motion.div>
 
@@ -83,18 +81,19 @@ const PersonalPage = () => {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-blue-500">
+          <h2 className="font-heading text-3xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300">
             Hobbies & Interests
           </h2>
           <SectionAccent className="mx-auto w-72 mb-10" />
 
           {/* Running & Cycling */}
-          <HobbySection id="running" title="Running & Cycling" emoji="🏃‍♂️ 🚴">
+          <HobbySection id="running" title="Running & Cycling">
             <div>
-              <p className="text-gray-300 mb-4">
-                Training for a 1/2 marathon in Santa Barbara; cross training with cycling on a Specialized Langster Pro.
+              <p className="text-slate-300 mb-4 leading-relaxed">
+                Training for a 1/2 marathon in Santa Barbara; cross training with track cycling on a Specialized Langster Pro.
               </p>
-              <ul className="list-disc list-inside text-gray-300 mb-4">
+              
+              <ul className="list-disc list-inside text-gray-300 mb-4 space-y-1">
                 <li>1/2 marathon: 1hr 23min (3x)</li>
                 <li>5k: 16:19</li>
                 <li>Mile: 4:36</li>
@@ -132,7 +131,7 @@ const PersonalPage = () => {
           </HobbySection>
 
           {/* Rock Climbing */}
-          <HobbySection id="climbing" title="Rock Climbing" emoji="🏔️ 🧗" reverse={true}>
+          <HobbySection id="climbing" title="Rock Climbing" reverse={true}>
             <PhotoCarousel
               photos={["/climbing1.jpg", "/climbing2.jpg", "/rock.jpg", "/climbing3.jpg"]}
               speed={22}
@@ -147,7 +146,7 @@ const PersonalPage = () => {
           </HobbySection>
 
           {/* Solo Travel */}
-          <HobbySection id="travel" title="Solo Travel" emoji="🌎 🛫">
+          <HobbySection id="travel" title="Solo Travel">
             <PhotoCarousel photos={["/swiss2.jpg", "/tokyo1.jpg", "/kyotostairs.jpg", "/italy.jpg", "/fuji.jpg", "/osaka.jpg", "/kobe.jpg", "/thaisteak.jpg", "/elephant.jpg", "/germany.jpg", "/italy2.jpg", "/swiss.jpg", "/thai2.jpg", "/ramen.jpg", "/kyoto.jpg", "/thai1.jpg"]} speed={50} />
             <div>
               <p className="text-gray-300 mb-3">
@@ -166,7 +165,7 @@ const PersonalPage = () => {
           </HobbySection>
 
           {/* Hiking */}
-          <HobbySection id="hiking" title="Hiking" emoji="🥾 🏔️">
+          <HobbySection id="hiking" title="Hiking">
             <PhotoCarousel photos={["/lizards.jpg", "/tangerine2.jpg", "/hikegroup.jpg", "/creek.jpg", "/sunsethike.jpg", "/7falls.jpg"]} speed={25} />
             <div>
               <p className="text-gray-300 mb-4">
@@ -190,9 +189,11 @@ const PersonalPage = () => {
       {/* Back to Top Button */}
       <motion.button
         whileHover={{ scale: 1.1 }}
-        transition={{ duration: 0.3 }}
-        className="fixed bottom-8 right-8 bg-yellow-300 text-black p-3 rounded-full shadow-lg"
+        whileTap={{ scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className="fixed bottom-8 right-8 z-40 glass-card hover-change text-amber-300 p-3 rounded-full shadow-lg flex items-center justify-center"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Back to top"
       >
         ↑
       </motion.button>
@@ -207,7 +208,7 @@ const HobbySection = ({ id, title, children, emoji = "", reverse = false }) => (
     id={id}
     className="mb-12 glass-card hover-change p-8 rounded-lg shadow-xl transition-all"
   >
-    <h3 className="text-2xl font-bold mb-2">
+    <h3 className="text-2xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-blue-300 inline-block">
       {title} {emoji}
     </h3>
     <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 ${reverse ? 'md:flex md:flex-row-reverse' : ''}`}>
